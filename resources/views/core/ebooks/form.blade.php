@@ -73,6 +73,26 @@
 
                 <div>
                     <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                        {{ __('Image') }}
+                    </label>
+                    <input
+                        type="file"
+                        name="image"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        class="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 focus:border-accent focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-neutral-50 dark:focus:ring-offset-neutral-800"
+                    >
+                    @if(isset($ebook) && $ebook->image_url)
+                        <div class="mt-2">
+                            <img src="{{ $ebook->image_url }}" alt="{{ $ebook->name }}" class="h-32 w-32 object-cover rounded-lg border border-neutral-300 dark:border-neutral-600">
+                        </div>
+                    @endif
+                    @error('image')
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                         {{ __('File') }}
                         @if(!isset($ebook))
                             <span class="text-red-600 dark:text-red-400">*</span>

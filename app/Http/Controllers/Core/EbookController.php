@@ -40,8 +40,11 @@ class EbookController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $data['file'] = Storage::putFile('ebooks', $file);
+            $data['file'] = Storage::putFile('ebooks', $request->file('file'), 'public');
+        }
+
+        if ($request->hasFile('image')) {
+            $data['image'] = Storage::putFile('ebooks/images', $request->file('image'), 'public');
         }
 
         Ebook::create($data);
@@ -72,10 +75,19 @@ class EbookController extends Controller
             if ($ebook->file) {
                 Storage::delete($ebook->file);
             }
-            $file = $request->file('file');
-            $data['file'] = Storage::putFile('ebooks', $file);
+            $data['file'] = Storage::putFile('ebooks', $request->file('file'), 'public');
         } else {
             unset($data['file']);
+        }
+
+        if ($request->hasFile('image')) {
+            // Delete old image
+            if ($ebook->image) {
+                Storage::delete($ebook->image);
+            }
+            $data['image'] = Storage::putFile('ebooks/images', $request->file('image'), 'public');
+        } else {
+            unset($data['image']);
         }
 
         $ebook->update($data);
@@ -104,6 +116,11 @@ class EbookController extends Controller
         // Delete file if exists
         if ($ebook->file) {
             Storage::delete($ebook->file);
+        }
+
+        // Delete image if exists
+        if ($ebook->image) {
+            Storage::delete($ebook->image);
         }
 
         $ebook->delete();

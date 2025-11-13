@@ -27,6 +27,9 @@
                                 {{ __('ID') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                {{ __('Image') }}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                 {{ __('Name') }}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
@@ -49,6 +52,15 @@
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
                                     {{ $ebook->id }}
                                 </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm">
+                                    @if($ebook->image_url)
+                                        <img src="{{ $ebook->image_url }}" alt="{{ $ebook->name }}" class="h-12 w-12 object-cover rounded border border-neutral-300 dark:border-neutral-600">
+                                    @else
+                                        <div class="h-12 w-12 rounded border border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
+                                            <span class="text-xs text-neutral-400">-</span>
+                                        </div>
+                                    @endif
+                                </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-neutral-900 dark:text-neutral-100">
                                     {{ $ebook->name }}
                                 </td>
@@ -63,7 +75,7 @@
                                     @endif
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
-                                    R$ {{ number_format($ebook->price, 2, ',', '.') }}
+                                    $ {{ number_format($ebook->price, 2, '.', ',') }}
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm">
                                     @if($ebook->file)
@@ -91,7 +103,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                                <td colspan="7" class="px-6 py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
                                     {{ __('No ebooks found.') }}
                                     <flux:link :href="route('core.ebooks.create')" class="mt-2 block" wire:navigate>
                                         {{ __('Create your first ebook') }}

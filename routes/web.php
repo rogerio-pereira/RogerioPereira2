@@ -56,7 +56,6 @@ Route::middleware(['auth'])
         Route::resource('ebooks', EbookController::class)
             ->except(['show'])
             ->names('core.ebooks');
-        
         Route::get('ebooks/{ebook}/download', [EbookController::class, 'download'])
             ->name('core.ebooks.download');
     });

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
             $table->decimal('price', 10, 2);
             $table->string('file')->nullable();
+            $table->string('image')->nullable();
             $table->timestamps();
         });
     }

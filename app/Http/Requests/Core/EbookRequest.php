@@ -35,6 +35,12 @@ class EbookRequest extends FormRequest
                 'mimes:pdf',
                 'max:10240', // 10MB
             ],
+            'image' => [
+                'nullable',
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:2048', // 2MB
+            ],
         ];
     }
 }
