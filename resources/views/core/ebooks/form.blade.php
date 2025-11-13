@@ -32,10 +32,9 @@
                     <flux:textarea
                         name="description"
                         :label="__('Description')"
-                        :value="old('description', $ebook->description ?? '')"
                         rows="4"
                         :error="$errors->first('description')"
-                    />
+                    >{{ old('description', $ebook->description ?? '') }}</flux:textarea>
                 </div>
 
                 <div>
@@ -89,8 +88,8 @@
                     @if(isset($ebook) && $ebook->file)
                         <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
                             {{ __('Current file:') }}
-                            <a href="{{ Storage::url($ebook->file) }}" target="_blank" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-                                {{ __('View current file') }}
+                            <a href="{{ route('core.ebooks.download', $ebook) }}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                {{ __('Download current file') }}
                             </a>
                         </p>
                     @endif

@@ -85,6 +85,18 @@ class EbookController extends Controller
     }
 
     /**
+     * Download the ebook file.
+     */
+    public function download(Ebook $ebook)
+    {
+        if (!$ebook->file || !Storage::exists($ebook->file)) {
+            abort(404, __('File not found.'));
+        }
+
+        return Storage::download($ebook->file);
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(Ebook $ebook): RedirectResponse

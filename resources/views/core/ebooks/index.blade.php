@@ -49,15 +49,8 @@
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
                                     {{ $ebook->id }}
                                 </td>
-                                <td class="px-6 py-4 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                                    <div class="max-w-xs">
-                                        <div class="font-medium">{{ $ebook->name }}</div>
-                                        @if($ebook->description)
-                                            <div class="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
-                                                {{ Str::limit($ebook->description, 60) }}
-                                            </div>
-                                        @endif
-                                    </div>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                    {{ $ebook->name }}
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm">
                                     @if($ebook->category)
@@ -74,8 +67,8 @@
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm">
                                     @if($ebook->file)
-                                        <a href="{{ Storage::url($ebook->file) }}" target="_blank" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-                                            {{ __('View File') }}
+                                        <a href="{{ route('core.ebooks.download', $ebook) }}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                            {{ __('Download') }}
                                         </a>
                                     @else
                                         <span class="text-neutral-500 dark:text-neutral-400">-</span>
