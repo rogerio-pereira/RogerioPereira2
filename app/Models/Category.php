@@ -18,4 +18,12 @@ class Category extends Model
         'name',
         'color',
     ];
+
+    /**
+     * Get the ebooks for the category.
+     */
+    public function ebooks()
+    {
+        return $this->hasMany(Ebook::class);
+    }
 }
