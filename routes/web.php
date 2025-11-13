@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Core\CategoryController;
 use App\Http\Controllers\LandingPages\AutomationController;
 use App\Http\Controllers\LandingPages\HomeController;
 use App\Http\Controllers\LandingPages\MarketingController;
@@ -46,4 +47,8 @@ Route::middleware(['auth'])
                 ),
             )
             ->name('two-factor.show');
+
+        Route::resource('categories', CategoryController::class)
+            ->except(['show'])
+            ->names('core.categories');
     });
