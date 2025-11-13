@@ -1,46 +1,27 @@
 <?php
 
+use App\Http\Controllers\LandingPages\AutomationController;
+use App\Http\Controllers\LandingPages\HomeController;
+use App\Http\Controllers\LandingPages\MarketingController;
+use App\Http\Controllers\LandingPages\SoftwareDevelopmentController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
-Route::get('/', function () {
-    return view('landing-pages/home/index');
-})->name('home');
+//Home
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/automation', function () {
-    return view('landing-pages/automation/index');
-})->name('automation');
+//Automation
+Route::get('/automation', [AutomationController::class, 'index'])->name('automation');
+Route::get('/automation/thank-you', [AutomationController::class, 'thanks'])->name('automation.thank-you');
 
-Route::get('/automation/thank-you', function () {
-    return view('landing-pages/automation/thank-you');
-})->name('automation.thank-you');
+//Software Development
+Route::get('/software-development', [SoftwareDevelopmentController::class, 'index'])->name('software-development');
+Route::get('/software-development/thank-you', [SoftwareDevelopmentController::class, 'thanks'])->name('software-development.thank-you');
 
-
-Route::get('/software-development', function () {
-    return view('landing-pages/software-development/index');
-})->name('software-development');
-
-Route::get('/software-development/thank-you', function () {
-    return view('landing-pages/software-development/thank-you');
-})->name('software-development.thank-you');
-
-Route::get('/marketing', function () {
-    return view('landing-pages/marketing/index');
-})->name('marketing');
-
-Route::get('/marketing/thank-you', function () {
-    return view('landing-pages/marketing/thank-you');
-})->name('marketing.thank-you');
-
-
-
-
-
-
-
-
-
+//Marketing
+Route::get('/marketing', [MarketingController::class, 'index'])->name('marketing');
+Route::get('/marketing/thank-you', [MarketingController::class, 'thanks'])->name('marketing.thank-you');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
