@@ -23,25 +23,27 @@ Route::get('/software-development/thank-you', [SoftwareDevelopmentController::cl
 Route::get('/marketing', [MarketingController::class, 'index'])->name('marketing');
 Route::get('/marketing/thank-you', [MarketingController::class, 'thanks'])->name('marketing.thank-you');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::middleware(['auth'])
+    ->prefix('core')
+    ->group(function () {
+        Route::view('dashboard', 'dashboard')
+            ->middleware(['auth', 'verified'])
+            ->name('dashboard');
 
-Route::middleware(['auth'])->group(function () {
-    Route::redirect('settings', 'settings/profile');
+        Route::redirect('settings', 'settings/profile');
 
-    Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
-    Volt::route('settings/password', 'settings.password')->name('user-password.edit');
-    Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');
+        Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
+        Volt::route('settings/password', 'settings.password')->name('user-password.edit');
+        Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');
 
-    Volt::route('settings/two-factor', 'settings.two-factor')
-        ->middleware(
-            when(
-                Features::canManageTwoFactorAuthentication()
-                    && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
-                ['password.confirm'],
-                [],
-            ),
-        )
-        ->name('two-factor.show');
-});
+        Volt::route('settings/two-factor', 'settings.two-factor')
+            ->middleware(
+                when(
+                    Features::canManageTwoFactorAuthentication()
+                        && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
+                    ['password.confirm'],
+                    [],
+                ),
+            )
+            ->name('two-factor.show');
+    });
