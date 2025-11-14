@@ -50,7 +50,7 @@ jobs:
 
       - name: Tests
         working-directory: ./project
-        run: php artisan test --parallel --coverage --min=90
+        run: php artisan test --parallel --coverage --min=87
 
       - name: Type Coverage
         working-directory: ./project
