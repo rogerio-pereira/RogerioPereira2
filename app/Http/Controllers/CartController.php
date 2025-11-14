@@ -56,7 +56,7 @@ class CartController extends Controller
     {
         $cart = session()->get('cart', []);
 
-        $cart = array_values(array_filter($cart, fn ($id) => $id != $ebook->id));
+        $cart = array_values(array_filter($cart, fn (int $id): bool => $id != $ebook->id));
         session()->put('cart', $cart);
 
         return redirect()->route('cart.index')

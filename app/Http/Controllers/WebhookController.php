@@ -14,7 +14,7 @@ class WebhookController extends Controller
     /**
      * Handle Stripe webhook events.
      */
-    public function handle(Request $request)
+    public function handle(Request $request): \Illuminate\Http\JsonResponse
     {
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
@@ -59,7 +59,7 @@ class WebhookController extends Controller
     /**
      * Handle checkout session completed event.
      */
-    protected function handleCheckoutSessionCompleted($session): void
+    protected function handleCheckoutSessionCompleted(\Stripe\Checkout\Session $session): void
     {
         $purchase = Purchase::where('stripe_checkout_session_id', $session->id)->first();
 
@@ -78,7 +78,7 @@ class WebhookController extends Controller
     /**
      * Handle payment intent succeeded event.
      */
-    protected function handlePaymentIntentSucceeded($paymentIntent): void
+    protected function handlePaymentIntentSucceeded(\Stripe\PaymentIntent $paymentIntent): void
     {
         // Additional handling if needed
         Log::info('Payment intent succeeded: '.$paymentIntent->id);

@@ -22,7 +22,7 @@ class Category extends Model
     /**
      * Get the ebooks for the category.
      */
-    public function ebooks()
+    public function ebooks(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Ebook::class);
     }

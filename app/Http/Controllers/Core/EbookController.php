@@ -107,7 +107,7 @@ class EbookController extends Controller
     /**
      * Download the ebook file.
      */
-    public function download(Ebook $ebook)
+    public function download(Ebook $ebook): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         if (! $ebook->file || ! Storage::exists($ebook->file)) {
             abort(404, __('File not found.'));

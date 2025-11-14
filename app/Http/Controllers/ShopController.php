@@ -74,7 +74,7 @@ class ShopController extends Controller
     /**
      * Process payment for cart items using Stripe PaymentIntent.
      */
-    public function processCheckout(Request $request)
+    public function processCheckout(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
             'name' => 'required|string|max:255',
