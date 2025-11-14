@@ -1,13 +1,11 @@
 name: tests
 
 on:
-  push:
+  workflow_run:
+    workflows: ["linter"]
+    types:
+      - completed
     branches:
-      - develop
-      - main
-  pull_request:
-    branches:
-      - develop
       - main
 
 jobs:
