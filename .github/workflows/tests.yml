@@ -49,9 +49,7 @@ jobs:
         run: npm run build
 
       - name: Tests
-        working-directory: ./project
         run: php artisan test --parallel --coverage --min=87
 
       - name: Type Coverage
-        working-directory: ./project
         run: php artisan test --type-coverage --min=90 --parallel
