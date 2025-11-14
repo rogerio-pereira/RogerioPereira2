@@ -31,7 +31,7 @@ class EbookFactory extends Factory
             'category_id' => rand(1,3),
             'price' => fake()->randomFloat(2, 9.99, 199.99),
             'file' => 'ebooks/files/fake-' . fake()->uuid() . '.pdf',
-            'image' => 'public/img/no-image-book.png',
+            'image' => 'ebooks/images/no-image-book.png',
         ];
     }
 }
