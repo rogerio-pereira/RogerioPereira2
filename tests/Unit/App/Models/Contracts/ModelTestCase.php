@@ -24,7 +24,7 @@ abstract class ModelTestCase extends TestCase
      */
     protected function expectedIncrementing(): bool
     {
-        return true; //Auto increment ID
+        return true; // Auto increment ID
         // return false; // UUID
     }
 
@@ -33,7 +33,7 @@ abstract class ModelTestCase extends TestCase
      */
     protected function expectedPrimaryKeyType(): ?string
     {
-        return 'int'; //integer ID
+        return 'int'; // integer ID
         // return 'string'; // UUID;
     }
 

@@ -304,4 +304,3 @@ test('categories index paginates results', function () {
     $this->assertCount(15, $categories);
     $this->assertTrue($categories->hasMorePages());
 });
-

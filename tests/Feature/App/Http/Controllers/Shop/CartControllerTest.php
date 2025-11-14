@@ -165,4 +165,3 @@ test('clear cart works when cart is already empty', function () {
     $cart = Session::get('cart', []);
     $this->assertEmpty($cart);
 });
-

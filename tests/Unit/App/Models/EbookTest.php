@@ -59,7 +59,7 @@ class EbookTest extends ModelTestCase
 
     public function test_ebook_can_be_instantiated(): void
     {
-        $ebook = new Ebook();
+        $ebook = new Ebook;
         $ebook->name = 'Test Ebook';
         $ebook->description = 'Test Description';
         $ebook->category_id = 1;
@@ -75,4 +75,3 @@ class EbookTest extends ModelTestCase
         $this->assertEquals('ebooks/images/test.jpg', $ebook->image);
     }
 }
-

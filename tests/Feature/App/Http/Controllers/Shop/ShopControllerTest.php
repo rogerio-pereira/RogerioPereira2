@@ -64,14 +64,14 @@ test('shop index displays empty state when no ebooks with files', function () {
 
 test('checkout redirects to cart when cart is empty', function () {
     Session::put('cart', []);
-    
+
     // Test lines 36-38: redirect when cart is empty
     // Note: The controller method has return type View but redirects when cart is empty
     // We test the behavior by calling the method directly with reflection
-    $controller = new \App\Http\Controllers\ShopController();
+    $controller = new \App\Http\Controllers\ShopController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('checkout');
-    
+
     // Call the method - it will execute lines 36-38
     try {
         $result = $method->invoke($controller);
@@ -362,7 +362,7 @@ test('checkout filters out ebooks that no longer exist in cart', function () {
 
 test('checkout handles PaymentIntent creation exception', function () {
     \Illuminate\Support\Facades\Log::spy();
-    
+
     $category = Category::factory()->create();
     $ebook = Ebook::factory()->create([
         'category_id' => $category->id,
@@ -374,13 +374,13 @@ test('checkout handles PaymentIntent creation exception', function () {
 
     // Test lines 66-68: catch block when PaymentIntent::create() throws ApiErrorException
     // We'll test by calling the controller method directly and simulating the exception
-    $controller = new \App\Http\Controllers\ShopController();
+    $controller = new \App\Http\Controllers\ShopController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('checkout');
-    
+
     // Set invalid Stripe key to potentially trigger exception
     \Stripe\Stripe::setApiKey('sk_test_invalid_key_that_will_fail');
-    
+
     try {
         $result = $method->invoke($controller);
         // If it succeeds, verify the view has clientSecret (may be null on exception)
@@ -436,7 +436,7 @@ test('processCheckout returns error when payment status is not succeeded', funct
 
     // Test lines 102-106: payment status check
     // We'll test by calling the controller method directly with a mock PaymentIntent
-    $controller = new \App\Http\Controllers\ShopController();
+    $controller = new \App\Http\Controllers\ShopController;
     $request = \Illuminate\Http\Request::create('/shop/checkout/process', 'POST', [
         'name' => 'John Doe',
         'email' => 'john@example.com',
@@ -457,11 +457,11 @@ test('processCheckout returns error when payment status is not succeeded', funct
     // Mock PaymentIntent::retrieve using a closure that returns our mock
     // Since we can't easily mock static methods, we'll test the controller logic
     // by directly calling processCheckout and mocking the Stripe call
-    
+
     // For now, test that the validation logic exists
     $reflectionController = new \ReflectionClass($controller);
     $method = $reflectionController->getMethod('processCheckout');
-    
+
     // The actual test would require mocking Stripe, but we verify the structure
     $this->assertTrue(method_exists($controller, 'processCheckout'));
 });
@@ -483,7 +483,7 @@ test('processCheckout successfully creates purchases and clears cart', function 
 
     // Test lines 111-135: successful purchase creation and cart clearing
     // We'll test the controller logic directly using reflection
-    $controller = new \App\Http\Controllers\ShopController();
+    $controller = new \App\Http\Controllers\ShopController;
     $request = \Illuminate\Http\Request::create('/shop/checkout/process', 'POST', [
         'name' => 'John Doe',
         'email' => 'john@example.com',
@@ -546,19 +546,18 @@ test('processCheckout successfully creates purchases and clears cart', function 
 
 test('success page handles null purchase parameter', function () {
     // Test the controller method directly with reflection to bypass route model binding
-    $controller = new \App\Http\Controllers\ShopController();
-    $request = new \Illuminate\Http\Request();
-    
+    $controller = new \App\Http\Controllers\ShopController;
+    $request = new \Illuminate\Http\Request;
+
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('success');
     $method->setAccessible(true);
-    
+
     $view = $method->invoke($controller, $request, null);
-    
+
     $this->assertInstanceOf(\Illuminate\Contracts\View\View::class, $view);
     $data = $view->getData();
     $this->assertNull($data['purchase']);
     $this->assertEmpty($data['purchases']);
     $this->assertEquals(0, $data['total']);
 });
-

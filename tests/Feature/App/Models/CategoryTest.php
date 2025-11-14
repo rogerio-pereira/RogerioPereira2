@@ -44,4 +44,3 @@ test('category ebooks relationship only returns ebooks for that category', funct
     $this->assertTrue($category2Ebooks->contains($ebook2));
     $this->assertFalse($category2Ebooks->contains($ebook1));
 });
-

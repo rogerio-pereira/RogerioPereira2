@@ -63,4 +63,3 @@ test('purchase ebook relationship loads ebook correctly', function () {
     $this->assertEquals($ebook2->id, $purchase2Ebook->id);
     $this->assertEquals($ebook2->name, $purchase2Ebook->name);
 });
-

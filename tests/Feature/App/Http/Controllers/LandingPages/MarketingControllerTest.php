@@ -29,4 +29,3 @@ test('marketing thank you page does not require authentication', function () {
     $response->assertStatus(200);
     $this->assertGuest();
 });
-

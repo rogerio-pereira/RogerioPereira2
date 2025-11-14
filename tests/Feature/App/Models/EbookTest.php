@@ -91,4 +91,3 @@ test('ebook purchases relationship only returns purchases for that ebook', funct
     $this->assertTrue($ebook2Purchases->contains($purchase2));
     $this->assertFalse($ebook2Purchases->contains($purchase1));
 });
-

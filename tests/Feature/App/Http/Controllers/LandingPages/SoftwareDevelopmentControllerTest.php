@@ -29,4 +29,3 @@ test('software development thank you page does not require authentication', func
     $response->assertStatus(200);
     $this->assertGuest();
 });
-

@@ -793,4 +793,3 @@ test('ebook update maintains old image when no new image is provided', function 
     $ebook->refresh();
     $this->assertEquals($oldImagePath, $ebook->image);
 });
-

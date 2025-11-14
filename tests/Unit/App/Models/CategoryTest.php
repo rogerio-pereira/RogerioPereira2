@@ -54,7 +54,7 @@ class CategoryTest extends ModelTestCase
 
     public function test_category_can_be_instantiated(): void
     {
-        $category = new Category();
+        $category = new Category;
         $category->name = 'Test Category';
         $category->color = '#FF5733';
 
@@ -62,4 +62,3 @@ class CategoryTest extends ModelTestCase
         $this->assertEquals('#FF5733', $category->color);
     }
 }
-

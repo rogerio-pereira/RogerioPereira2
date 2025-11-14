@@ -76,7 +76,7 @@ class PurchaseTest extends ModelTestCase
 
     public function test_purchase_can_be_instantiated(): void
     {
-        $purchase = new Purchase();
+        $purchase = new Purchase;
         $purchase->name = 'John Doe';
         $purchase->email = 'john@example.com';
         $purchase->phone = '1234567890';
@@ -96,4 +96,3 @@ class PurchaseTest extends ModelTestCase
         $this->assertEquals('completed', $purchase->status);
     }
 }
-

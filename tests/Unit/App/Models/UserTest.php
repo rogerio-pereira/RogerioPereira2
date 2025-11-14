@@ -63,7 +63,7 @@ class UserTest extends ModelTestCase
     #[DataProvider('initialsDataProvider')]
     public function test_initials(string $name, string $expected): void
     {
-        $user = new User();
+        $user = new User;
         $user->name = $name;
 
         $initials = $user->initials();

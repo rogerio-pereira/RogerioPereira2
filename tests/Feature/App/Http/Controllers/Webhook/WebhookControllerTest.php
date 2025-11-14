@@ -45,7 +45,7 @@ test('webhook processes payment_intent.succeeded event', function () {
 
     // Simulate what happens when payment_intent.succeeded event is processed
     // Since we can't easily mock Webhook::constructEvent, we test the handler directly
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handlePaymentIntentSucceeded');
     $method->setAccessible(true);
@@ -74,7 +74,7 @@ test('handleCheckoutSessionCompleted updates purchase when payment is paid', fun
 
     // Create Stripe Checkout Session and set properties using reflection
     $session = new \Stripe\Checkout\Session('cs_test_123');
-    
+
     // Use reflection to access the _values property and set additional properties
     $reflectionSession = new \ReflectionClass($session);
     $valuesProperty = $reflectionSession->getProperty('_values');
@@ -85,7 +85,7 @@ test('handleCheckoutSessionCompleted updates purchase when payment is paid', fun
     $valuesProperty->setValue($session, $values);
 
     // Use reflection to call protected method
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handleCheckoutSessionCompleted');
     $method->setAccessible(true);
@@ -115,7 +115,7 @@ test('handleCheckoutSessionCompleted does not update purchase when payment is no
 
     // Create Stripe Checkout Session with unpaid status
     $session = new \Stripe\Checkout\Session('cs_test_123');
-    
+
     $reflectionSession = new \ReflectionClass($session);
     $valuesProperty = $reflectionSession->getProperty('_values');
     $valuesProperty->setAccessible(true);
@@ -125,7 +125,7 @@ test('handleCheckoutSessionCompleted does not update purchase when payment is no
     $valuesProperty->setValue($session, $values);
 
     // Use reflection to call protected method
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handleCheckoutSessionCompleted');
     $method->setAccessible(true);
@@ -141,7 +141,7 @@ test('handleCheckoutSessionCompleted does not update purchase when payment is no
 test('handleCheckoutSessionCompleted does not update when purchase does not exist', function () {
     // Create Stripe Checkout Session
     $session = new \Stripe\Checkout\Session('cs_nonexistent');
-    
+
     $reflectionSession = new \ReflectionClass($session);
     $valuesProperty = $reflectionSession->getProperty('_values');
     $valuesProperty->setAccessible(true);
@@ -151,7 +151,7 @@ test('handleCheckoutSessionCompleted does not update when purchase does not exis
     $valuesProperty->setValue($session, $values);
 
     // Use reflection to call protected method
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handleCheckoutSessionCompleted');
     $method->setAccessible(true);
@@ -166,7 +166,7 @@ test('handlePaymentIntentSucceeded logs the event', function () {
     $paymentIntent = new \Stripe\PaymentIntent('pi_test_123');
 
     // Use reflection to call protected method
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handlePaymentIntentSucceeded');
     $method->setAccessible(true);
@@ -193,9 +193,9 @@ test('webhook handles unhandled event types', function () {
     // Use reflection to simulate the switch statement behavior
     // Since we can't easily mock Webhook::constructEvent, we'll test
     // the default case logic directly
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
-    
+
     // Simulate what happens in the switch default case
     // The controller logs unhandled events, so we verify that behavior
     Log::shouldReceive('info')
@@ -327,7 +327,7 @@ test('webhook processes checkout.session.completed event', function () {
     $values['payment_intent'] = 'pi_test_123';
     $valuesProperty->setValue($session, $values);
 
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handleCheckoutSessionCompleted');
     $method->setAccessible(true);
@@ -354,7 +354,7 @@ test('webhook handles generic exception and returns error', function () {
     // so to test the generic catch, we need a different approach
     // Since Webhook::constructEvent can throw other exceptions,
     // we'll test that the generic catch block exists and handles exceptions
-    
+
     // The invalid signature triggers SignatureVerificationException first,
     // but we can verify the generic catch structure exists
     $response = $this->postJson(route('stripe.webhook'), [
@@ -402,7 +402,7 @@ test('webhook processes checkout.session.completed event through switch', functi
     $values['payment_intent'] = 'pi_test_123';
     $valuesProperty->setValue($session, $values);
 
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handleCheckoutSessionCompleted');
     $method->setAccessible(true);
@@ -421,7 +421,7 @@ test('webhook processes payment_intent.succeeded event through switch', function
     // Test lines 48-50: switch case 'payment_intent.succeeded'
     $paymentIntent = new \Stripe\PaymentIntent('pi_test_123');
 
-    $controller = new \App\Http\Controllers\WebhookController();
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handlePaymentIntentSucceeded');
     $method->setAccessible(true);
@@ -441,11 +441,11 @@ test('webhook returns success response after processing event', function () {
     // Test line 56: return response()->json(['received' => true])
     // Since we can't easily mock Webhook::constructEvent, we'll test the controller
     // method structure and verify it would return the correct response
-    
-    $controller = new \App\Http\Controllers\WebhookController();
+
+    $controller = new \App\Http\Controllers\WebhookController;
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handle');
-    
+
     // Verify the method exists and has correct return type
     $this->assertTrue($method->hasReturnType());
     $returnType = $method->getReturnType();
@@ -453,4 +453,3 @@ test('webhook returns success response after processing event', function () {
 
     Config::set('cashier.webhook.secret', null);
 });
-
