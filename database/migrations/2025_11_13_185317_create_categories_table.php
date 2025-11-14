@@ -18,22 +18,6 @@ return new class extends Migration
             $table->string('color', 7)->nullable();
             $table->timestamps();
         });
-
-        // Seed initial categories
-        Category::insert([
-            [
-                'name' => 'Automation',
-                'color' => '#2CBFB3',
-            ],
-            [
-                'name' => 'Marketing',
-                'color' => '#C3329E',
-            ],
-            [
-                'name' => 'Software Development',
-                'color' => '#7D49CC',
-            ],
-        ]);
     }
 
     /**
