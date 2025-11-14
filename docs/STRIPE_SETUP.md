@@ -31,11 +31,11 @@ Adicione as seguintes variáveis no arquivo `.env`:
 
 ```env
 # Stripe Keys
-STRIPE_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-STRIPE_SECRET=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_KEY=pk_test_...
+STRIPE_SECRET=sk_test_...
 
 # Stripe Webhook Secret (será configurado na próxima etapa)
-STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
 **Importante:**
@@ -67,14 +67,14 @@ O projeto já está configurado com o Stripe CLI como um serviço Docker. Não �
    
    Procure por uma linha que mostra:
    ```
-   > Ready! Your webhook signing secret is whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   > Ready! Your webhook signing secret is whsec_...
    ```
 
 3. **Adicionar o secret ao `.env`:**
    
    Copie o valor `whsec_...` e adicione no seu arquivo `.env`:
    ```env
-   STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   STRIPE_WEBHOOK_SECRET=whsec_...
    ```
 
 4. **Reiniciar a aplicação (se necessário):**
@@ -118,7 +118,7 @@ Se preferir usar o Stripe CLI localmente ao invés do container:
 5. Copie o **Signing secret** (começa com `whsec_...`)
 6. Adicione no `.env` de produção:
    ```env
-   STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   STRIPE_WEBHOOK_SECRET=whsec_...
    ```
 
 ## 5. Testar a Integração
