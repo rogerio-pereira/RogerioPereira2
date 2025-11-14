@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature\App\Livewire\Settings;
+
 use App\Models\User;
 use Livewire\Volt\Volt;
 
@@ -73,3 +75,4 @@ test('correct password must be provided to delete account', function () {
 
     expect($user->fresh())->not->toBeNull();
 });
+

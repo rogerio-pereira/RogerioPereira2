@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature\App\Http\Auth;
+
 use App\Models\User;
 
 test('confirm password screen can be rendered', function () {
@@ -9,3 +11,4 @@ test('confirm password screen can be rendered', function () {
 
     $response->assertStatus(200);
 });
+

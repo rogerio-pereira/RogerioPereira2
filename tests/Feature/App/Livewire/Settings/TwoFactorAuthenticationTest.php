@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature\App\Livewire\Settings;
+
 use App\Models\User;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
@@ -68,3 +70,4 @@ test('two factor authentication disabled when confirmation abandoned between req
         'two_factor_recovery_codes' => null,
     ]);
 });
+

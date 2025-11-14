@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature\App\Http\Auth;
+
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
@@ -65,3 +67,4 @@ test('already verified user visiting verification link is redirected without fir
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
     Event::assertNotDispatched(Verified::class);
 });
+

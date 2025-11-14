@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature\App\Http\Auth;
+
 use App\Models\User;
 use Laravel\Fortify\Features;
 
@@ -67,3 +69,4 @@ test('users can logout', function () {
 
     $this->assertGuest();
 });
+

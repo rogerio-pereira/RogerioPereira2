@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature\App\Http\Auth;
+
 test('registration screen can be rendered', function () {
     // Registration is disabled in config/fortify.php
     $this->markTestSkipped('Registration feature is disabled');
@@ -25,3 +27,4 @@ test('new users can register', function () {
 
     $this->assertAuthenticated();
 });
+

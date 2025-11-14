@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Feature\App\Http\Auth;
+
 use App\Models\User;
 use Laravel\Fortify\Features;
 
@@ -30,3 +32,4 @@ test('two factor challenge can be rendered', function () {
         'password' => 'password',
     ])->assertRedirect(route('two-factor.login'));
 });
+
