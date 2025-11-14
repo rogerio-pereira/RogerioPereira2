@@ -55,4 +55,12 @@ class Ebook extends Model
             get: fn () => $this->image ? Storage::url($this->image) : null,
         );
     }
+
+    /**
+     * Get the purchases for the ebook.
+     */
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class);
+    }
 }

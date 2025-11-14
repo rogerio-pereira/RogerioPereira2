@@ -36,7 +36,7 @@ services:
             POSTGRES_USER: '${DB_USERNAME}'
             POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
         volumes:
-            - 'sail-pgsql:/var/lib/postgresql/data'
+            - './.docker/pgsql:/var/lib/postgresql/data'
             - './vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
         networks:
             - sail
@@ -51,12 +51,27 @@ services:
                 - '${DB_USERNAME}'
             retries: 3
             timeout: 5s
+    pgadmin:
+        image: 'dpage/pgadmin4:latest'
+        ports:
+            - '${FORWARD_PGADMIN_PORT:-5050}:80'
+        environment:
+            PGADMIN_DEFAULT_EMAIL: '${PGADMIN_EMAIL:-admin@admin.com}'
+            PGADMIN_DEFAULT_PASSWORD: '${PGADMIN_PASSWORD:-admin}'
+            PGADMIN_CONFIG_SERVER_MODE: 'False'
+        volumes:
+            - pgadmin_data:/var/lib/pgadmin
+        networks:
+            - sail
+        depends_on:
+            pgsql:
+                condition: service_healthy
     redis:
         image: 'redis:alpine'
         ports:
             - '${FORWARD_REDIS_PORT:-6379}:6379'
         volumes:
-            - 'sail-redis:/data'
+            - './.docker/redis:/data'
         networks:
             - sail
         healthcheck:
@@ -99,20 +114,37 @@ services:
             MINIO_ROOT_PASSWORD: "${AWS_SECRET_ACCESS_KEY}"
             AWS_BUCKET: "${AWS_BUCKET}"
         volumes:
-            - sail-minio:/data
+            - './.docker/minio:/data'
         networks:
             - sail
+    
+    stripe-cli:
+        image: stripe/stripe-cli:latest
+        container_name: stripe-cli
+        entrypoint: /bin/sh
+        command: >
+            -c "
+            sleep 10 &&
+            stripe listen 
+            --forward-to http://laravel.test/stripe/webhook 
+            --api-key $${STRIPE_SECRET}
+            --skip-verify
+            "
+        environment:
+            STRIPE_API_KEY: "${STRIPE_SECRET}"
+        volumes:
+            - './.docker/stripe:/root/.config/stripe'
+        networks:
+            - sail
+        restart: unless-stopped
+        depends_on:
+            laravel.test:
+                condition: service_started
 
+volumes:
+    pgadmin_data:
+        driver: local
 
-
-            
 networks:
     sail:
         driver: bridge
-volumes:
-    sail-pgsql:
-        driver: local
-    sail-redis:
-        driver: local
-    sail-minio:
-        driver: local
