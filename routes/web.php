@@ -49,13 +49,11 @@ Route::middleware(['auth'])
             )
             ->name('two-factor.show');
 
-        Route::resource('categories', CategoryController::class)
-            ->except(['show'])
-            ->names('core.categories');
+        //Categories
+        Route::resource('categories', CategoryController::class)->names('core.categories');
 
-        Route::resource('ebooks', EbookController::class)
-            ->except(['show'])
-            ->names('core.ebooks');
-        Route::get('ebooks/{ebook}/download', [EbookController::class, 'download'])
-            ->name('core.ebooks.download');
+        //Ebooks
+        Route::resource('ebooks', EbookController::class)->names('core.ebooks');
+        Route::get('ebooks/{ebook}/download', [EbookController::class, 'download'])->name('core.ebooks.download');
+
     });

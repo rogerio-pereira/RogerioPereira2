@@ -53,6 +53,17 @@ class EbookController extends Controller
             ->with('success', __('Ebook created successfully.'));
     }
 
+     /**
+     * Return resource in storage
+     *
+     * @param Ebook $ebook
+     * @return Ebook
+     */
+    public function show(Ebook $ebook) : Ebook
+    {
+        return $ebook;
+    }
+
     /**
      * Show the form for editing the specified resource.
      */
