@@ -638,3 +638,159 @@ test('download returns 404 when file is not found in storage', function () {
     $response->assertStatus(404);
 });
 
+test('guests cannot access show ebook', function () {
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
+
+    $response = $this->get(route('core.ebooks.show', $ebook));
+
+    $response->assertRedirect(route('login'));
+});
+
+test('authenticated users can view show ebook', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
+
+    $response = $this->get(route('core.ebooks.show', $ebook));
+
+    $response->assertStatus(200);
+    $response->assertJson([
+        'id' => $ebook->id,
+        'name' => $ebook->name,
+        'description' => $ebook->description,
+        'price' => $ebook->price,
+        'category_id' => $ebook->category_id,
+    ]);
+});
+
+test('ebooks index displays ebooks ordered by latest', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category = Category::factory()->create();
+    $ebook1 = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'created_at' => now()->subDay(),
+    ]);
+    $ebook2 = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'created_at' => now(),
+    ]);
+
+    $response = $this->get(route('core.ebooks.index'));
+
+    $response->assertStatus(200);
+    $ebooks = $response->viewData('ebooks');
+    $this->assertEquals($ebook2->id, $ebooks->first()->id);
+    $this->assertEquals($ebook1->id, $ebooks->last()->id);
+});
+
+test('ebooks index paginates results', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category = Category::factory()->create();
+    Ebook::factory()->count(20)->create(['category_id' => $category->id]);
+
+    $response = $this->get(route('core.ebooks.index'));
+
+    $response->assertStatus(200);
+    $ebooks = $response->viewData('ebooks');
+    $this->assertCount(15, $ebooks);
+    $this->assertTrue($ebooks->hasMorePages());
+});
+
+test('ebooks index loads category relationship', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
+
+    $response = $this->get(route('core.ebooks.index'));
+
+    $response->assertStatus(200);
+    $ebooks = $response->viewData('ebooks');
+    $this->assertTrue($ebooks->first()->relationLoaded('category'));
+});
+
+test('authenticated users can delete ebook without files', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => null,
+        'image' => null,
+    ]);
+
+    $response = $this->delete(route('core.ebooks.destroy', $ebook));
+
+    $response->assertRedirect(route('core.ebooks.index'));
+    $response->assertSessionHas('success');
+
+    $this->assertDatabaseMissing('ebooks', [
+        'id' => $ebook->id,
+    ]);
+});
+
+test('ebook update maintains old file when no new file is provided', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category = Category::factory()->create();
+    $oldFile = UploadedFile::fake()->create('old-ebook.pdf', 1000);
+    $oldFilePath = Storage::putFile('ebooks', $oldFile, 'public');
+
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => $oldFilePath,
+    ]);
+
+    $response = $this->put(route('core.ebooks.update', $ebook), [
+        'name' => 'Updated Ebook',
+        'category_id' => $ebook->category_id,
+        'price' => 39.99,
+    ]);
+
+    $response->assertRedirect(route('core.ebooks.index'));
+    $response->assertSessionHas('success');
+
+    $ebook->refresh();
+    $this->assertEquals($oldFilePath, $ebook->file);
+});
+
+test('ebook update maintains old image when no new image is provided', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category = Category::factory()->create();
+    $oldImage = UploadedFile::fake()->image('old-cover.jpg', 800, 600);
+    $oldImagePath = Storage::putFile('ebooks/images', $oldImage, 'public');
+
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'image' => $oldImagePath,
+    ]);
+
+    $response = $this->put(route('core.ebooks.update', $ebook), [
+        'name' => 'Updated Ebook',
+        'category_id' => $ebook->category_id,
+        'price' => 39.99,
+    ]);
+
+    $response->assertRedirect(route('core.ebooks.index'));
+    $response->assertSessionHas('success');
+
+    $ebook->refresh();
+    $this->assertEquals($oldImagePath, $ebook->image);
+});
+

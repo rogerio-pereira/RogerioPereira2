@@ -252,3 +252,56 @@ test('category color must not exceed 7 characters', function () {
     $response->assertSessionHasErrors(['color']);
 });
 
+test('guests cannot access show category', function () {
+    $category = Category::factory()->create();
+
+    $response = $this->get(route('core.categories.show', $category));
+
+    $response->assertRedirect(route('login'));
+});
+
+test('authenticated users can view show category', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category = Category::factory()->create();
+
+    $response = $this->get(route('core.categories.show', $category));
+
+    $response->assertStatus(200);
+    $response->assertJson([
+        'id' => $category->id,
+        'name' => $category->name,
+        'color' => $category->color,
+    ]);
+});
+
+test('categories index displays categories ordered by latest', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $category1 = Category::factory()->create(['created_at' => now()->subDay()]);
+    $category2 = Category::factory()->create(['created_at' => now()]);
+
+    $response = $this->get(route('core.categories.index'));
+
+    $response->assertStatus(200);
+    $categories = $response->viewData('categories');
+    $this->assertEquals($category2->id, $categories->first()->id);
+    $this->assertEquals($category1->id, $categories->last()->id);
+});
+
+test('categories index paginates results', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    Category::factory()->count(20)->create();
+
+    $response = $this->get(route('core.categories.index'));
+
+    $response->assertStatus(200);
+    $categories = $response->viewData('categories');
+    $this->assertCount(15, $categories);
+    $this->assertTrue($categories->hasMorePages());
+});
+
