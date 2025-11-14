@@ -48,5 +48,10 @@ jobs:
       - name: Build Assets
         run: npm run build
 
-      - name: Run Tests
-        run: ./vendor/bin/pest
+      - name: Tests
+        working-directory: ./project
+        run: php artisan test --parallel --coverage --min=90
+
+      - name: Type Coverage
+        working-directory: ./project
+        run: php artisan test --type-coverage --min=90 --parallel
