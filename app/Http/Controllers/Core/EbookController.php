@@ -53,13 +53,10 @@ class EbookController extends Controller
             ->with('success', __('Ebook created successfully.'));
     }
 
-     /**
+    /**
      * Return resource in storage
-     *
-     * @param Ebook $ebook
-     * @return Ebook
      */
-    public function show(Ebook $ebook) : Ebook
+    public function show(Ebook $ebook): Ebook
     {
         return $ebook;
     }
@@ -112,7 +109,7 @@ class EbookController extends Controller
      */
     public function download(Ebook $ebook)
     {
-        if (!$ebook->file || !Storage::exists($ebook->file)) {
+        if (! $ebook->file || ! Storage::exists($ebook->file)) {
             abort(404, __('File not found.'));
         }
 

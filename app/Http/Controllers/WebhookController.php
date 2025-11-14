@@ -30,11 +30,11 @@ class WebhookController extends Controller
             Stripe::setApiKey(config('cashier.secret') ?: env('STRIPE_SECRET'));
             $event = Webhook::constructEvent($payload, $sigHeader, $webhookSecret);
         } catch (SignatureVerificationException $e) {
-            Log::error('Stripe webhook signature verification failed: ' . $e->getMessage());
+            Log::error('Stripe webhook signature verification failed: '.$e->getMessage());
 
             return response()->json(['error' => 'Invalid signature'], 400);
         } catch (\Exception $e) {
-            Log::error('Stripe webhook error: ' . $e->getMessage());
+            Log::error('Stripe webhook error: '.$e->getMessage());
 
             return response()->json(['error' => 'Webhook processing failed'], 400);
         }
@@ -50,7 +50,7 @@ class WebhookController extends Controller
                 break;
 
             default:
-                Log::info('Unhandled Stripe webhook event: ' . $event->type);
+                Log::info('Unhandled Stripe webhook event: '.$event->type);
         }
 
         return response()->json(['received' => true]);
@@ -81,6 +81,6 @@ class WebhookController extends Controller
     protected function handlePaymentIntentSucceeded($paymentIntent): void
     {
         // Additional handling if needed
-        Log::info('Payment intent succeeded: ' . $paymentIntent->id);
+        Log::info('Payment intent succeeded: '.$paymentIntent->id);
     }
 }

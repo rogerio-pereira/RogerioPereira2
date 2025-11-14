@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Database\Seeders\EbookSeeder;
-use Database\Seeders\UserSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -19,9 +17,9 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
         ]);
 
-        if(config('app.env') === 'local') {
+        if (config('app.env') === 'local') {
             $this->call([
-                EbookSeeder::class
+                EbookSeeder::class,
             ]);
         }
     }

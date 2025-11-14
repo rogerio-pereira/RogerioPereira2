@@ -32,7 +32,7 @@ class ShopController extends Controller
     public function checkout(): View
     {
         $cart = session()->get('cart', []);
-        
+
         if (empty($cart)) {
             return redirect()->route('cart.index')
                 ->with('error', __('Your cart is empty.'));
@@ -64,7 +64,7 @@ class ShopController extends Controller
 
             $clientSecret = $paymentIntent->client_secret;
         } catch (ApiErrorException $e) {
-            Log::error('Stripe PaymentIntent creation error: ' . $e->getMessage());
+            Log::error('Stripe PaymentIntent creation error: '.$e->getMessage());
             $clientSecret = null;
         }
 
@@ -134,7 +134,7 @@ class ShopController extends Controller
                 'redirect_url' => route('shop.success', ['purchase' => $purchases[0]->id]),
             ]);
         } catch (ApiErrorException $e) {
-            Log::error('Stripe payment error: ' . $e->getMessage());
+            Log::error('Stripe payment error: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,

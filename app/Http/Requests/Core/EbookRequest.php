@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Core;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class EbookRequest extends FormRequest
 {

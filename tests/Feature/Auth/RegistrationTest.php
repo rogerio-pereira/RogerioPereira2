@@ -12,7 +12,7 @@ test('registration screen can be rendered', function () {
 test('new users can register', function () {
     // Registration is disabled in config/fortify.php
     $this->markTestSkipped('Registration feature is disabled');
-    
+
     $response = $this->post(route('register.store'), [
         'name' => 'John Doe',
         'email' => 'test@example.com',

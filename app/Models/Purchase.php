@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Purchase extends Model
 {
     use HasUuids;
+
     /**
      * The attributes that are mass assignable.
      *

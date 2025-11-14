@@ -39,15 +39,10 @@ class CategoryController extends Controller
             ->with('success', __('Category created successfully.'));
     }
 
-
-
     /**
      * Return resource in storage
-     *
-     * @param Category $category
-     * @return Category
      */
-    public function show(Category $category) : Category
+    public function show(Category $category): Category
     {
         return $category;
     }
