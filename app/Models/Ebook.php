@@ -31,6 +31,14 @@ class Ebook extends Model
         'price',
         'file',
         'image',
+        // Mautic fields
+        'mautic_asset_id',
+        'mautic_field_id',
+        'mautic_field_alias',
+        'mautic_email_id',
+        'mautic_email_name',
+        'mautic_campaign_id',
+        'last_email_html',
     ];
 
     /**
