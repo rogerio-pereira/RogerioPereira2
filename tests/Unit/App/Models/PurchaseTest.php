@@ -39,6 +39,7 @@ class PurchaseTest extends ModelTestCase
             'currency',
             'status',
             'completed_at',
+            'download_hash',
         ];
     }
 

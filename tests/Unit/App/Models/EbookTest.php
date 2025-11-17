@@ -3,8 +3,10 @@
 namespace Tests\Unit\App\Models;
 
 use App\Models\Ebook;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Tests\Unit\App\Models\Contracts\ModelTestCase;
 
 class EbookTest extends ModelTestCase
@@ -19,10 +21,17 @@ class EbookTest extends ModelTestCase
         return 'ebooks';
     }
 
+    protected function expectedPrimaryKeyType(): string
+    {
+        return 'string';
+    }
+
     protected function expectedTraits(): array
     {
         return [
             HasFactory::class,
+            HasUuids::class,
+            SoftDeletes::class,
         ];
     }
 
@@ -30,6 +39,7 @@ class EbookTest extends ModelTestCase
     {
         return [
             'name',
+            'slug',
             'description',
             'category_id',
             'price',
@@ -46,8 +56,8 @@ class EbookTest extends ModelTestCase
     protected function expectedCasts(): array
     {
         return [
-            'id' => 'int',
             'price' => 'decimal:2',
+            'deleted_at' => 'datetime',
         ];
     }
 

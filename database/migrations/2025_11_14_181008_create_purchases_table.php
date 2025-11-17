@@ -16,14 +16,17 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('phone')->nullable();
-            $table->foreignId('ebook_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('ebook_id')->constrained('ebooks');
             $table->string('stripe_checkout_session_id')->nullable()->unique();
             $table->string('stripe_payment_intent_id')->nullable();
             $table->decimal('amount', 10, 2);
             $table->string('currency', 3)->default('usd');
             $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
             $table->timestamp('completed_at')->nullable();
+            $table->string('download_hash')->unique()->nullable();
             $table->timestamps();
+
+            $table->index('download_hash');
         });
     }
 

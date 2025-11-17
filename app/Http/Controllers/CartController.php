@@ -55,9 +55,16 @@ class CartController extends Controller
     public function remove(Ebook $ebook): RedirectResponse
     {
         $cart = session()->get('cart', []);
+        $ebookIdToRemove = $ebook->id;
+        $updatedCart = [];
 
-        $cart = array_values(array_filter($cart, fn (int $id): bool => $id != $ebook->id));
-        session()->put('cart', $cart);
+        foreach ($cart as $cartItemId) {
+            if ($cartItemId !== $ebookIdToRemove) {
+                $updatedCart[] = $cartItemId;
+            }
+        }
+
+        session()->put('cart', $updatedCart);
 
         return redirect()->route('cart.index')
             ->with('success', __(':name removed from cart.', ['name' => $ebook->name]));

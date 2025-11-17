@@ -571,9 +571,11 @@ test('authenticated users can delete an ebook', function () {
     $response->assertRedirect(route('core.ebooks.index'));
     $response->assertSessionHas('success');
 
-    $this->assertDatabaseMissing('ebooks', [
+    // Ebook uses soft delete, so it should still exist but be soft deleted
+    $this->assertSoftDeleted('ebooks', [
         'id' => $ebook->id,
     ]);
+    $this->assertNull(Ebook::find($ebook->id));
 });
 
 test('guests cannot download an ebook', function () {
@@ -733,9 +735,11 @@ test('authenticated users can delete ebook without files', function () {
     $response->assertRedirect(route('core.ebooks.index'));
     $response->assertSessionHas('success');
 
-    $this->assertDatabaseMissing('ebooks', [
+    // Ebook uses soft delete, so it should still exist but be soft deleted
+    $this->assertSoftDeleted('ebooks', [
         'id' => $ebook->id,
     ]);
+    $this->assertNull(Ebook::find($ebook->id));
 });
 
 test('ebook update maintains old file when no new file is provided', function () {

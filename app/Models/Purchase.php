@@ -26,6 +26,7 @@ class Purchase extends Model
         'currency',
         'status',
         'completed_at',
+        'download_hash',
     ];
 
     /**
