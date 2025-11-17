@@ -2,10 +2,14 @@
 
 namespace Tests\Feature\App\Http\Controllers\Core;
 
+use App\Jobs\DeactivateEbookJob;
+use App\Jobs\SetupEbookJob;
+use App\Jobs\UpdateEbookJob;
 use App\Models\Category;
 use App\Models\Ebook;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 test('guests cannot access ebooks index', function () {
@@ -61,6 +65,7 @@ test('guests cannot store an ebook', function () {
 });
 
 test('authenticated users can create an ebook', function () {
+    Queue::fake();
     Storage::fake('local');
 
     $user = User::factory()->create();
@@ -90,6 +95,10 @@ test('authenticated users can create an ebook', function () {
         'category_id' => $category->id,
         'price' => 29.99,
     ]);
+
+    Queue::assertPushed(SetupEbookJob::class, function ($job) {
+        return $job->ebook->name === 'Test Ebook';
+    });
 });
 
 test('ebook creation requires name field', function () {
@@ -312,6 +321,7 @@ test('ebook image must not exceed 2MB', function () {
 });
 
 test('ebook can be created without description', function () {
+    Queue::fake();
     Storage::fake('local');
 
     $user = User::factory()->create();
@@ -339,6 +349,7 @@ test('ebook can be created without description', function () {
 });
 
 test('ebook can be created without image', function () {
+    Queue::fake();
     Storage::fake('local');
 
     $user = User::factory()->create();
@@ -418,6 +429,7 @@ test('guests cannot update an ebook', function () {
 });
 
 test('authenticated users can update an ebook', function () {
+    Queue::fake();
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -444,6 +456,10 @@ test('authenticated users can update an ebook', function () {
         'description' => 'Updated Description',
         'price' => 39.99,
     ]);
+
+    Queue::assertPushed(UpdateEbookJob::class, function ($job) use ($ebook) {
+        return $job->ebook->id === $ebook->id;
+    });
 });
 
 test('ebook update requires name field', function () {
@@ -560,6 +576,7 @@ test('guests cannot delete an ebook', function () {
 });
 
 test('authenticated users can delete an ebook', function () {
+    Queue::fake();
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -576,6 +593,10 @@ test('authenticated users can delete an ebook', function () {
         'id' => $ebook->id,
     ]);
     $this->assertNull(Ebook::find($ebook->id));
+
+    Queue::assertPushed(DeactivateEbookJob::class, function ($job) use ($ebook) {
+        return $job->ebook->id === $ebook->id;
+    });
 });
 
 test('guests cannot download an ebook', function () {
@@ -720,6 +741,7 @@ test('ebooks index loads category relationship', function () {
 });
 
 test('authenticated users can delete ebook without files', function () {
+    Queue::fake();
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -740,6 +762,10 @@ test('authenticated users can delete ebook without files', function () {
         'id' => $ebook->id,
     ]);
     $this->assertNull(Ebook::find($ebook->id));
+
+    Queue::assertPushed(DeactivateEbookJob::class, function ($job) use ($ebook) {
+        return $job->ebook->id === $ebook->id;
+    });
 });
 
 test('ebook update maintains old file when no new file is provided', function () {

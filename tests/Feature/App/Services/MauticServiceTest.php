@@ -5,6 +5,10 @@ namespace Tests\Feature\App\Services;
 use App\Services\MauticService;
 use Mockery;
 
+afterEach(function () {
+    Mockery::close();
+});
+
 test('mautic service can be instantiated', function () {
     $service = new MauticService;
 
@@ -328,4 +332,210 @@ test('mautic service get contact by email handles missing fields', function () {
     $result = $service->getContactByEmail('test@example.com');
 
     $this->assertNull($result);
+});
+
+test('mautic service tracks asset download with existing contact', function () {
+    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
+
+    // First call: getContactByEmail
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('GET', 'contacts', ['search' => 'user@example.com'])
+        ->andReturn([
+            'contacts' => [
+                '1' => [
+                    'id' => 123,
+                    'fields' => [
+                        'all' => [
+                            'email' => 'user@example.com',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+    // Second call: track asset download
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('POST', 'assets/456/contact/123/add', ['contact' => 123])
+        ->andReturn(['success' => true]);
+
+    $service = new MauticService;
+    $result = $service->trackAssetDownload(456, 'user@example.com');
+
+    $this->assertArrayHasKey('success', $result);
+});
+
+test('mautic service tracks asset download with new contact', function () {
+    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
+
+    // First call: getContactByEmail (returns empty)
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('GET', 'contacts', ['search' => 'newuser@example.com'])
+        ->andReturn(['contacts' => []]);
+
+    // Second call: createOrUpdateContact
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('POST', 'contacts/new', Mockery::on(function ($arg) {
+            return $arg['email'] === 'newuser@example.com';
+        }))
+        ->andReturn(['contact' => ['id' => 789, 'email' => 'newuser@example.com']]);
+
+    // Third call: track asset download
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('POST', 'assets/456/contact/789/add', ['contact' => 789])
+        ->andReturn(['success' => true]);
+
+    $service = new MauticService;
+    $result = $service->trackAssetDownload(456, 'newuser@example.com');
+
+    $this->assertArrayHasKey('success', $result);
+});
+
+test('mautic service throws exception when contact creation fails in track asset download', function () {
+    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
+
+    // First call: getContactByEmail (returns empty)
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('GET', 'contacts', ['search' => 'user@example.com'])
+        ->andReturn(['contacts' => []]);
+
+    // Second call: createOrUpdateContact (returns without id)
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('POST', 'contacts/new', Mockery::any())
+        ->andReturn(['contact' => []]);
+
+    $service = new MauticService;
+
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage('Failed to get or create contact for asset download tracking');
+
+    $service->trackAssetDownload(456, 'user@example.com');
+});
+
+test('mautic service adds email action to campaign', function () {
+    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
+
+    // First call: get campaign
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('GET', 'campaigns/100')
+        ->andReturn([
+            'campaign' => [
+                'events' => [],
+                'canvasSettings' => [],
+            ],
+        ]);
+
+    // Second call: update campaign with events and canvas settings
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('PATCH', 'campaigns/100/edit', Mockery::on(function ($arg) {
+            $hasEvents = isset($arg['events']) && is_array($arg['events']);
+            $hasCanvasSettings = isset($arg['canvasSettings']) && is_array($arg['canvasSettings']);
+            $hasNodes = isset($arg['canvasSettings']['nodes']) && is_array($arg['canvasSettings']['nodes']);
+            $hasConnections = isset($arg['canvasSettings']['connections']) && is_array($arg['canvasSettings']['connections']);
+
+            if (! $hasEvents || ! $hasCanvasSettings || ! $hasNodes || ! $hasConnections) {
+                return false;
+            }
+
+            // Check that there are email.send and campaign.source events
+            $hasEmailSendEvent = false;
+            $hasSourceEvent = false;
+            foreach ($arg['events'] as $event) {
+                if (isset($event['type']) && $event['type'] === 'email.send') {
+                    $hasEmailSendEvent = true;
+                    if (! isset($event['properties']['email']) || $event['properties']['email'] !== 200) {
+                        return false;
+                    }
+                }
+                if (isset($event['type']) && $event['type'] === 'campaign.source') {
+                    $hasSourceEvent = true;
+                }
+            }
+
+            return $hasEmailSendEvent && $hasSourceEvent;
+        }))
+        ->andReturn(['campaign' => ['id' => 100]]);
+
+    $service = new MauticService;
+    $result = $service->addEmailActionToCampaign(100, 200);
+
+    $this->assertArrayHasKey('campaign', $result);
+});
+
+test('mautic service adds email action to campaign with existing events', function () {
+    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
+
+    $existingEventId = 'existing_event_123';
+    $existingEvents = [
+        $existingEventId => [
+            'id' => $existingEventId,
+            'type' => 'email.send',
+            'name' => 'Existing Email',
+        ],
+    ];
+
+    $existingCanvasSettings = [
+        'nodes' => [
+            $existingEventId => [
+                'position' => ['x' => 50, 'y' => 50],
+            ],
+        ],
+    ];
+
+    // First call: get campaign with existing events
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('GET', 'campaigns/100')
+        ->andReturn([
+            'campaign' => [
+                'events' => $existingEvents,
+                'canvasSettings' => $existingCanvasSettings,
+            ],
+        ]);
+
+    // Second call: update campaign with new events added to existing ones
+    $mauticMock->shouldReceive('request')
+        ->once()
+        ->with('PATCH', 'campaigns/100/edit', Mockery::on(function ($arg) use ($existingEventId) {
+            // Check that existing event is preserved
+            if (! isset($arg['events'][$existingEventId])) {
+                return false;
+            }
+
+            // Check that new events are added
+            $hasEmailSendEvent = false;
+            $hasSourceEvent = false;
+            foreach ($arg['events'] as $eventId => $event) {
+                if ($eventId === $existingEventId) {
+                    continue;
+                }
+                if (isset($event['type']) && $event['type'] === 'email.send') {
+                    $hasEmailSendEvent = true;
+                    if (! isset($event['properties']['email']) || $event['properties']['email'] !== 200) {
+                        return false;
+                    }
+                }
+                if (isset($event['type']) && $event['type'] === 'campaign.source') {
+                    $hasSourceEvent = true;
+                }
+            }
+
+            return $hasEmailSendEvent && $hasSourceEvent
+                && isset($arg['canvasSettings']['nodes'])
+                && isset($arg['canvasSettings']['connections']);
+        }))
+        ->andReturn(['campaign' => ['id' => 100]]);
+
+    $service = new MauticService;
+    $result = $service->addEmailActionToCampaign(100, 200);
+
+    $this->assertArrayHasKey('campaign', $result);
 });

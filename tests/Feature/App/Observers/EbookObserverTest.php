@@ -2,12 +2,8 @@
 
 namespace Tests\Feature\App\Observers;
 
-use App\Jobs\DeactivateEbookJob;
-use App\Jobs\SetupEbookJob;
-use App\Jobs\UpdateEbookJob;
 use App\Models\Category;
 use App\Models\Ebook;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 
 test('ebook observer generates slug automatically when slug is empty', function () {
@@ -145,52 +141,4 @@ test('ebook observer handles very long names when generating slug', function () 
 
     $this->assertNotNull($ebook->slug);
     $this->assertLessThanOrEqual(255, strlen($ebook->slug)); // Database limit
-});
-
-test('ebook observer dispatches SetupEbookJob when ebook is created', function () {
-    Bus::fake();
-
-    $category = Category::factory()->create();
-    $ebook = Ebook::factory()->create([
-        'category_id' => $category->id,
-    ]);
-
-    Bus::assertDispatched(SetupEbookJob::class, function ($job) use ($ebook) {
-        return $job->ebook->id === $ebook->id;
-    });
-});
-
-test('ebook observer dispatches UpdateEbookJob when ebook is updated', function () {
-    Bus::fake();
-
-    $category = Category::factory()->create();
-    $ebook = Ebook::factory()->create([
-        'category_id' => $category->id,
-    ]);
-
-    // Clear the SetupEbookJob that was dispatched on create
-    Bus::assertDispatched(SetupEbookJob::class);
-
-    $ebook->update([
-        'name' => 'Updated Name',
-    ]);
-
-    Bus::assertDispatched(UpdateEbookJob::class, function ($job) use ($ebook) {
-        return $job->ebook->id === $ebook->id;
-    });
-});
-
-test('ebook observer dispatches DeactivateEbookJob when ebook is deleted', function () {
-    Bus::fake();
-
-    $category = Category::factory()->create();
-    $ebook = Ebook::factory()->create([
-        'category_id' => $category->id,
-    ]);
-
-    $ebook->delete();
-
-    Bus::assertDispatched(DeactivateEbookJob::class, function ($job) use ($ebook) {
-        return $job->ebook->id === $ebook->id;
-    });
 });

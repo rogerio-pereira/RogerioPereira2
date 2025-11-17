@@ -31,6 +31,10 @@ Route::get('/marketing/thank-you', [MarketingController::class, 'thanks'])->name
 // Shop - Public routes for buying ebooks
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 
+// Public ebook download route
+Route::get('/ebooks/{ebook}/download', [\App\Http\Controllers\EbookDownloadController::class, 'download'])
+    ->name('ebooks.download');
+
 // Cart routes
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add/{ebook}', [CartController::class, 'add'])->name('cart.add');

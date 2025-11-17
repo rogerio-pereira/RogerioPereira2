@@ -63,6 +63,35 @@ class MauticService
     }
 
     /**
+     * Track asset download.
+     * This registers a download event for the asset in Mautic.
+     */
+    public function trackAssetDownload(int $assetId, string $contactEmail): array
+    {
+        // Get or create contact by email
+        $contact = $this->getContactByEmail($contactEmail);
+        $contactId = null;
+
+        if ($contact === null) {
+            $contactResponse = $this->createOrUpdateContact($contactEmail, []);
+            $contactId = $contactResponse['contact']['id'] ?? null;
+        } else {
+            $contactId = $contact['id'] ?? null;
+        }
+
+        if ($contactId === null) {
+            throw new \RuntimeException('Failed to get or create contact for asset download tracking');
+        }
+
+        // Track asset download by adding contact to asset
+        $data = [
+            'contact' => $contactId,
+        ];
+
+        return Mautic::request('POST', "assets/{$assetId}/contact/{$contactId}/add", $data);
+    }
+
+    /**
      * Create an email.
      */
     public function createEmail(string $name, string $subject, string $html): array
@@ -116,6 +145,90 @@ class MauticService
     public function updateCampaign(int $id, array $data): array
     {
         return Mautic::request('PATCH', "campaigns/{$id}/edit", $data);
+    }
+
+    /**
+     * Add email action to a campaign.
+     */
+    public function addEmailActionToCampaign(int $campaignId, int $emailId): array
+    {
+        // Get campaign details first
+        $campaign = Mautic::request('GET', "campaigns/{$campaignId}");
+        $campaignData = $campaign['campaign'] ?? [];
+
+        // Get existing events or initialize empty array
+        $events = $campaignData['events'] ?? [];
+        $canvasSettings = $campaignData['canvasSettings'] ?? [];
+
+        // Create email send action event
+        $eventId = 'email_send_'.time();
+        $emailActionEvent = [
+            'id' => $eventId,
+            'type' => 'email.send',
+            'name' => 'Send Email',
+            'description' => null,
+            'order' => 1,
+            'properties' => [
+                'email' => $emailId,
+            ],
+            'triggerMode' => 'immediate',
+            'triggerDate' => null,
+            'anchor' => 'no',
+            'anchorEventType' => null,
+        ];
+
+        // Add event to events array
+        $events[$eventId] = $emailActionEvent;
+
+        // Create source event (campaign source)
+        $sourceEventId = 'source_'.time();
+        $sourceEvent = [
+            'id' => $sourceEventId,
+            'type' => 'campaign.source',
+            'name' => 'Campaign Source',
+            'description' => null,
+            'order' => 0,
+            'properties' => [],
+            'triggerMode' => 'immediate',
+            'triggerDate' => null,
+            'anchor' => 'no',
+            'anchorEventType' => null,
+        ];
+
+        $events[$sourceEventId] = $sourceEvent;
+
+        // Update canvas settings to connect source to email action
+        $canvasSettings['nodes'][$sourceEventId] = [
+            'position' => [
+                'x' => 100,
+                'y' => 100,
+            ],
+        ];
+
+        $canvasSettings['nodes'][$eventId] = [
+            'position' => [
+                'x' => 300,
+                'y' => 100,
+            ],
+        ];
+
+        $canvasSettings['connections'][$sourceEventId] = [
+            [
+                'target' => $eventId,
+                'anchors' => [
+                    'source' => 'leadsource',
+                    'target' => 'top',
+                ],
+            ],
+        ];
+
+        // Update campaign with events and canvas settings
+        $updateData = [
+            'events' => $events,
+            'canvasSettings' => $canvasSettings,
+        ];
+
+        return $this->updateCampaign($campaignId, $updateData);
     }
 
     /**

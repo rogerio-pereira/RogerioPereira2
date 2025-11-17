@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Core;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\EbookRequest;
+use App\Jobs\DeactivateEbookJob;
+use App\Jobs\SetupEbookJob;
+use App\Jobs\UpdateEbookJob;
 use App\Models\Category;
 use App\Models\Ebook;
 use Illuminate\Http\RedirectResponse;
@@ -52,7 +55,9 @@ class EbookController extends Controller
             $data['image'] = Storage::putFile('ebooks/images', $request->file('image'), 'public');
         }
 
-        Ebook::create($data);   // It will trigger EbookObserver
+        $ebook = Ebook::create($data);   // It will trigger EbookObserver for slug generation
+
+        SetupEbookJob::dispatch($ebook);
 
         return redirect()->route('core.ebooks.index')
             ->with('success', __('Ebook created successfully.'));
@@ -105,6 +110,8 @@ class EbookController extends Controller
 
         $ebook->update($data);
 
+        UpdateEbookJob::dispatch($ebook);
+
         return redirect()->route('core.ebooks.index')
             ->with('success', __('Ebook updated successfully.'));
     }
@@ -135,6 +142,8 @@ class EbookController extends Controller
         if ($ebook->image) {
             Storage::delete($ebook->image);
         }
+
+        DeactivateEbookJob::dispatch($ebook);
 
         $ebook->delete();
 
