@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'mautic' => [
+        'url' => env('MAUTIC_URL'),
+        'client_id' => env('MAUTIC_CLIENT_ID'),
+        'client_secret' => env('MAUTIC_CLIENT_SECRET'),
+    ]
+
 ];
