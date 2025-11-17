@@ -21,50 +21,56 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
+        restart: unless-stopped
         depends_on:
-            - pgsql
+            - mysql
             - redis
             - minio
             - mailpit
-    pgsql:
-        image: 'postgres:18-alpine'
+            
+    mysql:
+        image: mysql:lts
         ports:
-            - '${FORWARD_DB_PORT:-5432}:5432'
+            - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
-            PGPASSWORD: '${DB_PASSWORD:-secret}'
-            POSTGRES_DB: '${DB_DATABASE}'
-            POSTGRES_USER: '${DB_USERNAME}'
-            POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+            - MYSQL_ROOT_PASSWORD=${DB_PASSWORD:-password}
+            - MYSQL_DATABASE=${DB_DATABASE:-laravel}
+            - MYSQL_USER=${DB_USERNAME:-sail}
+            - MYSQL_PASSWORD=${DB_PASSWORD:-password}
+            - MAUTIC_DB_DATABASE=${MAUTIC_DB_DATABASE:-mautic}
         volumes:
-            - './.docker/pgsql:/var/lib/postgresql/data'
-            - './vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
+            - './.docker/mysql:/var/lib/mysql'
+            - './docker/mysql/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh'
         networks:
             - sail
         healthcheck:
-            test:
-                - CMD
-                - pg_isready
-                - '-q'
-                - '-d'
-                - '${DB_DATABASE}'
-                - '-U'
-                - '${DB_USERNAME}'
-            retries: 3
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            start_period: 5s
+            interval: 5s
             timeout: 5s
-    pgadmin:
-        image: 'dpage/pgadmin4:latest'
+            retries: 10
+        restart: unless-stopped
+    
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:latest
         ports:
-            - '${FORWARD_PGADMIN_PORT:-5050}:80'
+            - '${FORWARD_PHPMYADMIN_PORT:-8080}:80'
         environment:
-            PGADMIN_DEFAULT_EMAIL: '${PGADMIN_EMAIL:-admin@admin.com}'
-            PGADMIN_DEFAULT_PASSWORD: '${PGADMIN_PASSWORD:-admin}'
-            PGADMIN_CONFIG_SERVER_MODE: 'False'
-        volumes:
-            - pgadmin_data:/var/lib/pgadmin
+            - PMA_HOST=mysql
+            - PMA_PORT=3306
+            - PMA_USER=${DB_USERNAME:-sail}
+            - PMA_PASSWORD=${DB_PASSWORD:-password}
+            - MYSQL_ROOT_PASSWORD=${DB_PASSWORD:-password}
+            - UPLOAD_LIMIT=300M
+            - PMA_ARBITRARY=1
+            - PMA_ABSOLUTE_URI=http://localhost:${FORWARD_PHPMYADMIN_PORT:-8080}/
+        # volumes:
+        #     - './.docker/phpmyadmin:/etc/phpmyadmin'
         networks:
             - sail
+        restart: unless-stopped
         depends_on:
-            pgsql:
+            mysql:
                 condition: service_healthy
     redis:
         image: 'redis:alpine'
@@ -81,6 +87,7 @@ services:
                 - ping
             retries: 3
             timeout: 5s
+        restart: unless-stopped
     
     mailpit:
         image: 'axllent/mailpit:latest'
@@ -89,6 +96,7 @@ services:
             - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
         networks:
             - sail
+        restart: unless-stopped
     minio:
         image: minio/minio:latest
         entrypoint: /bin/sh -c
@@ -117,6 +125,7 @@ services:
             - './.docker/minio:/data'
         networks:
             - sail
+        restart: unless-stopped
     
     stripe-cli:
         image: stripe/stripe-cli:latest
@@ -141,9 +150,71 @@ services:
             laravel.test:
                 condition: service_started
 
-volumes:
-    pgadmin_data:
-        driver: local
+    mautic_web:
+        image: mautic/mautic:latest
+        ports:
+            - '${FORWARD_MAUTIC_PORT:-1111}:80'
+        volumes:
+            - './.docker/mautic/config:/var/www/html/config:z'
+            - './.docker/mautic/logs:/var/www/html/var/logs:z'
+            - './.docker/mautic/media/files:/var/www/html/docroot/media/files:z'
+            - './.docker/mautic/media/images:/var/www/html/docroot/media/images:z'
+            # - './.docker/mautic/cron:/opt/mautic/cron:z # Uncomment this line to customize your cron configuration
+        environment:
+            - DOCKER_MAUTIC_LOAD_TEST_DATA=${DOCKER_MAUTIC_LOAD_TEST_DATA:-false}
+            - DOCKER_MAUTIC_RUN_MIGRATIONS=${DOCKER_MAUTIC_RUN_MIGRATIONS:-true}
+        env_file:
+            - docker/mautic/.env
+        networks:
+            - sail
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost"]
+            start_period: 5s
+            interval: 5s
+            timeout: 5s
+            retries: 100
+        restart: unless-stopped
+        depends_on:
+            mysql:
+                condition: service_healthy
+    
+    mautic_cron:
+        image: mautic/mautic:latest
+        volumes:
+            - './.docker/mautic/config:/var/www/html/config:z'
+            - './.docker/mautic/logs:/var/www/html/var/logs:z'
+            - './.docker/mautic/media/files:/var/www/html/docroot/media/files:z'
+            - './.docker/mautic/media/images:/var/www/html/docroot/media/images:z'
+            # - './.docker/mautic/cron:/opt/mautic/cron:z # Uncomment this line to customize your cron configuration
+        environment:
+            - DOCKER_MAUTIC_ROLE=mautic_cron
+        env_file:
+            - docker/mautic/.env
+        networks:
+            - sail
+        restart: unless-stopped
+        depends_on:
+            mautic_web:
+                condition: service_healthy
+    
+    mautic_worker:
+        image: mautic/mautic:latest
+        volumes:
+            - './.docker/mautic/config:/var/www/html/config:z'
+            - './.docker/mautic/logs:/var/www/html/var/logs:z'
+            - './.docker/mautic/media/files:/var/www/html/docroot/media/files:z'
+            - './.docker/mautic/media/images:/var/www/html/docroot/media/images:z'
+            # - './.docker/mautic/cron:/opt/mautic/cron:z # Uncomment this line to customize your cron configuration
+        environment:
+            - DOCKER_MAUTIC_ROLE=mautic_worker
+        env_file:
+            - docker/mautic/.env
+        networks:
+            - sail
+        restart: unless-stopped
+        depends_on:
+            mautic_web:
+                condition: service_healthy
 
 networks:
     sail:
