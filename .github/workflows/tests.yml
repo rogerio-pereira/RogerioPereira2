@@ -49,7 +49,7 @@ jobs:
         run: npm run build
 
       - name: Tests
-        run: php artisan test --parallel --coverage --min=87
+        run: php artisan test --parallel --coverage --min=90
 
       - name: Type Coverage
         run: php artisan test --type-coverage --min=90 --parallel
