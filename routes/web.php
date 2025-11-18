@@ -18,14 +18,17 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Automation
 Route::get('/automation', [AutomationController::class, 'index'])->name('automation');
+Route::post('/automation', [AutomationController::class, 'store'])->name('automation.store');
 Route::get('/automation/thank-you', [AutomationController::class, 'thanks'])->name('automation.thank-you');
 
 // Software Development
 Route::get('/software-development', [SoftwareDevelopmentController::class, 'index'])->name('software-development');
+Route::post('/software-development', [SoftwareDevelopmentController::class, 'store'])->name('software-development.store');
 Route::get('/software-development/thank-you', [SoftwareDevelopmentController::class, 'thanks'])->name('software-development.thank-you');
 
 // Marketing
 Route::get('/marketing', [MarketingController::class, 'index'])->name('marketing');
+Route::post('/marketing', [MarketingController::class, 'store'])->name('marketing.store');
 Route::get('/marketing/thank-you', [MarketingController::class, 'thanks'])->name('marketing.thank-you');
 
 // Shop - Public routes for buying ebooks

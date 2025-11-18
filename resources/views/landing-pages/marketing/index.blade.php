@@ -1029,14 +1029,15 @@
                 <div class="form-container">
                 <h3>Get Your Free Marketing Strategy Guide</h3>
                 <p>Discover the exact strategies that help small businesses compete with bigger budgets and generate consistent leads.</p>
-                <form id="leadForm" action="#" method="POST">
+                <form id="leadForm" action="{{ route('marketing.store') }}" method="POST">
+                    @csrf
                     <div class="form-group">
                         <label for="name">Your Name</label>
-                        <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+                        <input type="text" id="name" name="name" placeholder="Enter your full name" required value="{{ old('name') }}">
                     </div>
                     <div class="form-group">
                         <label for="email">Your Email</label>
-                        <input type="email" id="email" name="email" placeholder="Enter your best email address" required>
+                        <input type="email" id="email" name="email" placeholder="Enter your best email address" required value="{{ old('email') }}">
                     </div>
                     <button type="submit" class="btn-primary">Get My Free Guide Now</button>
                 </form>
@@ -1546,12 +1547,7 @@
             });
         });
         
-        // Form submission handler (to be integrated with Mautic)
-        document.getElementById('leadForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            // This will be replaced with Mautic integration
-            alert('Thank you! Your information has been submitted. Check your email for the guide.');
-        });
+        // Form will submit normally to the server
         
         // FAQ Accordion
         document.querySelectorAll('.faq-question').forEach(question => {

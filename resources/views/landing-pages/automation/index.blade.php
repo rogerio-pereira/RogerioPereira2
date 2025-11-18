@@ -1067,7 +1067,8 @@
                     <h2>Get Your Free Guide</h2>
                     <p>Discover 10 automation strategies that will save you hours every week</p>
                     
-                    <form id="leadForm" action="#" method="POST">
+                    <form id="leadForm" action="{{ route('automation.store') }}" method="POST">
+                        @csrf
                         <div class="form-group">
                             <label for="name">Your Name</label>
                             <input 
@@ -1076,6 +1077,7 @@
                                 name="name" 
                                 placeholder="Enter your full name" 
                                 required
+                                value="{{ old('name') }}"
                             >
                         </div>
                         
@@ -1087,6 +1089,7 @@
                                 name="email" 
                                 placeholder="your.email@example.com" 
                                 required
+                                value="{{ old('email') }}"
                             >
                         </div>
                         
@@ -1639,24 +1642,7 @@
             });
         });
 
-        // Form submission handler (to be integrated with Mautic)
-        document.getElementById('leadForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Here you'll integrate with Mautic
-            // For now, this is a placeholder
-            const formData = new FormData(this);
-            const name = formData.get('name');
-            const email = formData.get('email');
-            
-            console.log('Form submitted:', { name, email });
-            
-            // TODO: Replace with actual Mautic form submission
-            // Example: fetch('/mautic/form/submit', { method: 'POST', body: formData })
-            
-            alert('Thank you! Check your email for the free guide.');
-            this.reset();
-        });
+        // Form will submit normally to the server
         
         // FAQ Accordion
         document.querySelectorAll('.faq-question').forEach(question => {
