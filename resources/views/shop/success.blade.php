@@ -61,6 +61,7 @@
             align-items: center;
             justify-content: center;
             font-size: 3rem;
+            color: #ffffff;
         }
         
         .success-title {
