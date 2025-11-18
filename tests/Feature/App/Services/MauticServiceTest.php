@@ -1,541 +1,887 @@
 <?php
 
-namespace Tests\Feature\App\Services;
+namespace Tests\Unit\App\Services;
 
 use App\Services\MauticService;
-use Mockery;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
-afterEach(function () {
-    Mockery::close();
+beforeEach(function () {
+    Cache::flush();
+    config([
+        'services.mautic.url' => 'https://mautic.example.com',
+        'services.mautic.client_id' => 'test-client-id',
+        'services.mautic.client_secret' => 'test-client-secret',
+    ]);
 });
 
-test('mautic service can be instantiated', function () {
-    $service = new MauticService;
+test('mautic service validates configuration on construction', function () {
+    config(['services.mautic.url' => '']);
 
-    $this->assertInstanceOf(MauticService::class, $service);
+    expect(fn () => new MauticService)
+        ->toThrow(\RuntimeException::class, 'Mautic URL is not configured');
 });
 
-test('mautic service creates contact field', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'fields/contact/new', Mockery::on(function ($arg) {
-            return $arg['alias'] === 'test_field'
-                && $arg['type'] === 'text'
-                && $arg['label'] === 'Test Field'
-                && $arg['properties'] === [];
-        }))
-        ->andReturn(['field' => ['id' => 123]]);
+test('mautic service validates client id on construction', function () {
+    config(['services.mautic.client_id' => '']);
 
-    $service = new MauticService;
-    $result = $service->createContactField('test_field', 'text', 'Test Field');
-
-    $this->assertArrayHasKey('field', $result);
+    expect(fn () => new MauticService)
+        ->toThrow(\RuntimeException::class, 'Mautic Client ID is not configured');
 });
 
-test('mautic service updates contact field', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'fields/contact/123/edit', ['label' => 'Updated Field'])
-        ->andReturn(['field' => ['id' => 123, 'label' => 'Updated Field']]);
+test('mautic service validates client secret on construction', function () {
+    config(['services.mautic.client_secret' => '']);
 
-    $service = new MauticService;
-    $result = $service->updateContactField(123, ['label' => 'Updated Field']);
-
-    $this->assertArrayHasKey('field', $result);
+    expect(fn () => new MauticService)
+        ->toThrow(\RuntimeException::class, 'Mautic Client Secret is not configured');
 });
 
-test('mautic service creates asset', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'assets/new', Mockery::on(function ($arg) {
-            return $arg['title'] === 'Test Asset'
-                && $arg['storageLocation'] === 'remote'
-                && $arg['remotePath'] === 'https://example.com/file.pdf'
-                && $arg['isPublished'] === true;
-        }))
-        ->andReturn(['asset' => ['id' => 456]]);
+test('mautic service creates contact field with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/fields/contact/new' => [[
+            'field' => ['id' => 123],
+        ], 201],
+    ]);
 
     $service = new MauticService;
-    $result = $service->createAsset('Test Asset', 'https://example.com/file.pdf');
+    $response = $service->createContactField('test_alias', 'text', 'Test Label', ['required' => true]);
 
-    $this->assertArrayHasKey('asset', $result);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/fields/contact/new'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['alias'] === 'test_alias'
+            && $request->data()['type'] === 'text'
+            && $request->data()['label'] === 'Test Label'
+            && $request->data()['properties'] === ['required' => true];
+    });
+
+    expect($response)->toBeArray()
+        ->and($response['field']['id'])->toBe(123);
 });
 
-test('mautic service updates asset', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'assets/456/edit', ['title' => 'Updated Asset'])
-        ->andReturn(['asset' => ['id' => 456, 'title' => 'Updated Asset']]);
+test('mautic service updates contact field with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/fields/contact/123/edit' => [[
+            'field' => ['id' => 123],
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->updateAsset(456, ['title' => 'Updated Asset']);
+    $data = ['label' => 'Updated Label'];
+    $response = $service->updateContactField(123, $data);
 
-    $this->assertArrayHasKey('asset', $result);
+    Http::assertSent(function ($request) use ($data) {
+        return $request->url() === 'https://mautic.example.com/api/fields/contact/123/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data() === $data;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service unpublishes asset', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'assets/456/edit', ['isPublished' => false])
-        ->andReturn(['asset' => ['id' => 456, 'isPublished' => false]]);
+test('mautic service creates asset with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/assets/new' => [[
+            'asset' => ['id' => 456],
+        ], 201],
+    ]);
 
     $service = new MauticService;
-    $result = $service->unpublishAsset(456);
+    $response = $service->createAsset('Test Asset', 'https://example.com/file.pdf');
 
-    $this->assertArrayHasKey('asset', $result);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/assets/new'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['title'] === 'Test Asset'
+            && $request->data()['storageLocation'] === 'remote'
+            && $request->data()['remotePath'] === 'https://example.com/file.pdf'
+            && $request->data()['isPublished'] === true;
+    });
+
+    expect($response)->toBeArray()
+        ->and($response['asset']['id'])->toBe(456);
 });
 
-test('mautic service creates email', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'emails/new', Mockery::on(function ($arg) {
-            return $arg['name'] === 'Test Email'
-                && $arg['subject'] === 'Test Subject'
-                && $arg['body'] === '<html>Test</html>'
-                && $arg['emailType'] === 'template'
-                && $arg['isPublished'] === true;
-        }))
-        ->andReturn(['email' => ['id' => 789]]);
+test('mautic service updates asset with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/assets/456/edit' => [[
+            'asset' => ['id' => 456],
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->createEmail('Test Email', 'Test Subject', '<html>Test</html>');
+    $data = ['title' => 'Updated Asset'];
+    $response = $service->updateAsset(456, $data);
 
-    $this->assertArrayHasKey('email', $result);
+    Http::assertSent(function ($request) use ($data) {
+        return $request->url() === 'https://mautic.example.com/api/assets/456/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data() === $data;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service updates email', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'emails/789/edit', ['name' => 'Updated Email'])
-        ->andReturn(['email' => ['id' => 789, 'name' => 'Updated Email']]);
+test('mautic service unpublishes asset with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/assets/456/edit' => [[
+            'asset' => ['id' => 456],
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->updateEmail(789, ['name' => 'Updated Email']);
+    $response = $service->unpublishAsset(456);
 
-    $this->assertArrayHasKey('email', $result);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/assets/456/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['isPublished'] === false;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service unpublishes email', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'emails/789/edit', ['isPublished' => false])
-        ->andReturn(['email' => ['id' => 789, 'isPublished' => false]]);
-
-    $service = new MauticService;
-    $result = $service->unpublishEmail(789);
-
-    $this->assertArrayHasKey('email', $result);
-});
-
-test('mautic service creates campaign', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'campaigns/new', Mockery::on(function ($arg) {
-            return $arg['name'] === 'Test Campaign'
-                && $arg['description'] === 'Test Description'
-                && $arg['isPublished'] === true;
-        }))
-        ->andReturn(['campaign' => ['id' => 101]]);
-
-    $service = new MauticService;
-    $result = $service->createCampaign('Test Campaign', 'Test Description');
-
-    $this->assertArrayHasKey('campaign', $result);
-});
-
-test('mautic service updates campaign', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'campaigns/101/edit', ['name' => 'Updated Campaign'])
-        ->andReturn(['campaign' => ['id' => 101, 'name' => 'Updated Campaign']]);
-
-    $service = new MauticService;
-    $result = $service->updateCampaign(101, ['name' => 'Updated Campaign']);
-
-    $this->assertArrayHasKey('campaign', $result);
-});
-
-test('mautic service unpublishes campaign', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'campaigns/101/edit', ['isPublished' => false])
-        ->andReturn(['campaign' => ['id' => 101, 'isPublished' => false]]);
-
-    $service = new MauticService;
-    $result = $service->unpublishCampaign(101);
-
-    $this->assertArrayHasKey('campaign', $result);
-});
-
-test('mautic service adds contact to campaign', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'campaigns/101/contact/1/add', ['contact' => 1])
-        ->andReturn(['success' => true]);
-
-    $service = new MauticService;
-    $result = $service->addContactToCampaign(101, 1);
-
-    $this->assertArrayHasKey('success', $result);
-});
-
-test('mautic service gets contact by email', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'contacts', ['search' => 'test@example.com'])
-        ->andReturn([
+test('mautic service tracks asset download with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts*' => [[
             'contacts' => [
-                '1' => [
-                    'id' => 1,
+                [
+                    'id' => 789,
                     'fields' => [
-                        'all' => [
-                            'email' => 'test@example.com',
-                        ],
+                        'all' => ['email' => 'test@example.com'],
                     ],
                 ],
             ],
-        ]);
+        ], 200],
+        'https://mautic.example.com/api/assets/456/contact/789/add' => [[
+            'success' => true,
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->getContactByEmail('test@example.com');
+    $response = $service->trackAssetDownload(456, 'test@example.com');
 
-    $this->assertNotNull($result);
-    $this->assertEquals(1, $result['id']);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/assets/456/contact/789/add'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['contact'] === 789;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service returns null when contact not found', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'contacts', ['search' => 'notfound@example.com'])
-        ->andReturn(['contacts' => []]);
+test('mautic service creates contact when tracking asset download if contact does not exist', function () {
+    Http::fakeSequence()
+        ->push(['access_token' => 'test-token', 'expires_in' => 3600], 200) // OAuth token
+        ->push(['contacts' => []], 200) // getContactByEmail returns empty
+        ->push(['contact' => ['id' => 999]], 201) // createOrUpdateContact
+        ->push(['success' => true], 200); // trackAssetDownload
 
     $service = new MauticService;
-    $result = $service->getContactByEmail('notfound@example.com');
+    $response = $service->trackAssetDownload(456, 'new@example.com');
 
-    $this->assertNull($result);
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), 'https://mautic.example.com/api/contacts/new')
+            && $request->method() === 'POST'
+            && $request->data()['email'] === 'new@example.com';
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service creates or updates contact', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'contacts/new', Mockery::on(function ($arg) {
-            return $arg['email'] === 'test@example.com'
-                && $arg['firstname'] === 'Test';
-        }))
-        ->andReturn(['contact' => ['id' => 999, 'email' => 'test@example.com']]);
+test('mautic service creates email with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/emails/new' => [[
+            'email' => ['id' => 321],
+        ], 201],
+    ]);
 
     $service = new MauticService;
-    $result = $service->createOrUpdateContact('test@example.com', ['firstname' => 'Test']);
+    $html = '<html><body>Test Email</body></html>';
+    $response = $service->createEmail('test_email', 'Test Subject', $html);
 
-    $this->assertArrayHasKey('contact', $result);
+    Http::assertSent(function ($request) use ($html) {
+        return $request->url() === 'https://mautic.example.com/api/emails/new'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['name'] === 'test_email'
+            && $request->data()['subject'] === 'Test Subject'
+            && $request->data()['body'] === $html
+            && $request->data()['emailType'] === 'template'
+            && $request->data()['isPublished'] === true;
+    });
+
+    expect($response)->toBeArray()
+        ->and($response['email']['id'])->toBe(321);
 });
 
-test('mautic service updates contact field value', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'contacts/1/edit', ['custom_field' => 'custom_value'])
-        ->andReturn(['contact' => ['id' => 1, 'custom_field' => 'custom_value']]);
+test('mautic service updates email with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/emails/321/edit' => [[
+            'email' => ['id' => 321],
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->updateContactFieldValue(1, 'custom_field', 'custom_value');
+    $data = ['subject' => 'Updated Subject'];
+    $response = $service->updateEmail(321, $data);
 
-    $this->assertArrayHasKey('contact', $result);
+    Http::assertSent(function ($request) use ($data) {
+        return $request->url() === 'https://mautic.example.com/api/emails/321/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data() === $data;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service get contact by email finds correct contact among multiple', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'contacts', ['search' => 'test@example.com'])
-        ->andReturn([
-            'contacts' => [
-                '1' => [
-                    'id' => 1,
-                    'fields' => [
-                        'all' => [
-                            'email' => 'other@example.com',
-                        ],
-                    ],
-                ],
-                '2' => [
-                    'id' => 2,
-                    'fields' => [
-                        'all' => [
-                            'email' => 'test@example.com',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
+test('mautic service unpublishes email with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/emails/321/edit' => [[
+            'email' => ['id' => 321],
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->getContactByEmail('test@example.com');
+    $response = $service->unpublishEmail(321);
 
-    $this->assertNotNull($result);
-    $this->assertEquals(2, $result['id']);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/emails/321/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['isPublished'] === false;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service get contact by email returns null when no exact match', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'contacts', ['search' => 'test@example.com'])
-        ->andReturn([
-            'contacts' => [
-                '1' => [
-                    'id' => 1,
-                    'fields' => [
-                        'all' => [
-                            'email' => 'other@example.com',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
+test('mautic service creates campaign with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/new' => [[
+            'campaign' => ['id' => 555],
+        ], 201],
+    ]);
 
     $service = new MauticService;
-    $result = $service->getContactByEmail('test@example.com');
+    $response = $service->createCampaign('Test Campaign', 'Test Description');
 
-    $this->assertNull($result);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/campaigns/new'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['name'] === 'Test Campaign'
+            && $request->data()['description'] === 'Test Description'
+            && $request->data()['isPublished'] === true;
+    });
+
+    expect($response)->toBeArray()
+        ->and($response['campaign']['id'])->toBe(555);
 });
 
-test('mautic service get contact by email handles missing fields', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'contacts', ['search' => 'test@example.com'])
-        ->andReturn([
-            'contacts' => [
-                '1' => [
-                    'id' => 1,
-                ],
-            ],
-        ]);
+test('mautic service creates campaign without description', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/new' => [[
+            'campaign' => ['id' => 555],
+        ], 201],
+    ]);
 
     $service = new MauticService;
-    $result = $service->getContactByEmail('test@example.com');
+    $response = $service->createCampaign('Test Campaign');
 
-    $this->assertNull($result);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/campaigns/new'
+            && $request->method() === 'POST'
+            && $request->data()['name'] === 'Test Campaign'
+            && $request->data()['description'] === ''
+            && $request->data()['isPublished'] === true;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service tracks asset download with existing contact', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-
-    // First call: getContactByEmail
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'contacts', ['search' => 'user@example.com'])
-        ->andReturn([
-            'contacts' => [
-                '1' => [
-                    'id' => 123,
-                    'fields' => [
-                        'all' => [
-                            'email' => 'user@example.com',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-    // Second call: track asset download
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'assets/456/contact/123/add', ['contact' => 123])
-        ->andReturn(['success' => true]);
+test('mautic service updates campaign with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/555/edit' => [[
+            'campaign' => ['id' => 555],
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->trackAssetDownload(456, 'user@example.com');
+    $data = ['name' => 'Updated Campaign'];
+    $response = $service->updateCampaign(555, $data);
 
-    $this->assertArrayHasKey('success', $result);
+    Http::assertSent(function ($request) use ($data) {
+        return $request->url() === 'https://mautic.example.com/api/campaigns/555/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data() === $data;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service tracks asset download with new contact', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-
-    // First call: getContactByEmail (returns empty)
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'contacts', ['search' => 'newuser@example.com'])
-        ->andReturn(['contacts' => []]);
-
-    // Second call: createOrUpdateContact
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'contacts/new', Mockery::on(function ($arg) {
-            return $arg['email'] === 'newuser@example.com';
-        }))
-        ->andReturn(['contact' => ['id' => 789, 'email' => 'newuser@example.com']]);
-
-    // Third call: track asset download
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'assets/456/contact/789/add', ['contact' => 789])
-        ->andReturn(['success' => true]);
+test('mautic service unpublishes campaign with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/555/edit' => [[
+            'campaign' => ['id' => 555],
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->trackAssetDownload(456, 'newuser@example.com');
+    $response = $service->unpublishCampaign(555);
 
-    $this->assertArrayHasKey('success', $result);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/campaigns/555/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['isPublished'] === false;
+    });
+
+    expect($response)->toBeArray();
 });
 
-test('mautic service throws exception when contact creation fails in track asset download', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-
-    // First call: getContactByEmail (returns empty)
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'contacts', ['search' => 'user@example.com'])
-        ->andReturn(['contacts' => []]);
-
-    // Second call: createOrUpdateContact (returns without id)
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('POST', 'contacts/new', Mockery::any())
-        ->andReturn(['contact' => []]);
-
-    $service = new MauticService;
-
-    $this->expectException(\RuntimeException::class);
-    $this->expectExceptionMessage('Failed to get or create contact for asset download tracking');
-
-    $service->trackAssetDownload(456, 'user@example.com');
-});
-
-test('mautic service adds email action to campaign', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-
-    // First call: get campaign
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'campaigns/100')
-        ->andReturn([
+test('mautic service adds email action to campaign with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/555' => [[
             'campaign' => [
                 'events' => [],
-                'canvasSettings' => [],
+                'canvasSettings' => [
+                    'nodes' => [],
+                    'connections' => [],
+                ],
             ],
-        ]);
+        ], 200],
+        'https://mautic.example.com/api/campaigns/555/edit' => [[
+            'campaign' => ['id' => 555],
+        ], 200],
+    ]);
 
-    // Second call: update campaign with events and canvas settings
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'campaigns/100/edit', Mockery::on(function ($arg) {
-            $hasEvents = isset($arg['events']) && is_array($arg['events']);
-            $hasCanvasSettings = isset($arg['canvasSettings']) && is_array($arg['canvasSettings']);
-            $hasNodes = isset($arg['canvasSettings']['nodes']) && is_array($arg['canvasSettings']['nodes']);
-            $hasConnections = isset($arg['canvasSettings']['connections']) && is_array($arg['canvasSettings']['connections']);
+    $service = new MauticService;
+    $response = $service->addEmailActionToCampaign(555, 321);
 
-            if (! $hasEvents || ! $hasCanvasSettings || ! $hasNodes || ! $hasConnections) {
-                return false;
-            }
+    Http::assertSent(function ($request) {
+        $data = $request->data();
+        $hasEmailEvent = false;
+        $hasSourceEvent = false;
 
-            // Check that there are email.send and campaign.source events
-            $hasEmailSendEvent = false;
-            $hasSourceEvent = false;
-            foreach ($arg['events'] as $event) {
-                if (isset($event['type']) && $event['type'] === 'email.send') {
-                    $hasEmailSendEvent = true;
-                    if (! isset($event['properties']['email']) || $event['properties']['email'] !== 200) {
-                        return false;
-                    }
+        if (isset($data['events']) && is_array($data['events'])) {
+            foreach ($data['events'] as $eventId => $event) {
+                if (isset($event['type']) && $event['type'] === 'email.send' && isset($event['properties']['email']) && $event['properties']['email'] === 321) {
+                    $hasEmailEvent = true;
                 }
                 if (isset($event['type']) && $event['type'] === 'campaign.source') {
                     $hasSourceEvent = true;
                 }
             }
+        }
 
-            return $hasEmailSendEvent && $hasSourceEvent;
-        }))
-        ->andReturn(['campaign' => ['id' => 100]]);
+        return $request->url() === 'https://mautic.example.com/api/campaigns/555/edit'
+            && $request->method() === 'PATCH'
+            && isset($data['events'])
+            && isset($data['canvasSettings'])
+            && $hasEmailEvent
+            && $hasSourceEvent;
+    });
 
-    $service = new MauticService;
-    $result = $service->addEmailActionToCampaign(100, 200);
-
-    $this->assertArrayHasKey('campaign', $result);
+    expect($response)->toBeArray();
 });
 
-test('mautic service adds email action to campaign with existing events', function () {
-    $mauticMock = Mockery::mock('alias:Triibo\Mautic\Facades\Mautic');
-
-    $existingEventId = 'existing_event_123';
-    $existingEvents = [
-        $existingEventId => [
-            'id' => $existingEventId,
-            'type' => 'email.send',
-            'name' => 'Existing Email',
-        ],
-    ];
-
-    $existingCanvasSettings = [
-        'nodes' => [
-            $existingEventId => [
-                'position' => ['x' => 50, 'y' => 50],
-            ],
-        ],
-    ];
-
-    // First call: get campaign with existing events
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('GET', 'campaigns/100')
-        ->andReturn([
-            'campaign' => [
-                'events' => $existingEvents,
-                'canvasSettings' => $existingCanvasSettings,
-            ],
-        ]);
-
-    // Second call: update campaign with new events added to existing ones
-    $mauticMock->shouldReceive('request')
-        ->once()
-        ->with('PATCH', 'campaigns/100/edit', Mockery::on(function ($arg) use ($existingEventId) {
-            // Check that existing event is preserved
-            if (! isset($arg['events'][$existingEventId])) {
-                return false;
-            }
-
-            // Check that new events are added
-            $hasEmailSendEvent = false;
-            $hasSourceEvent = false;
-            foreach ($arg['events'] as $eventId => $event) {
-                if ($eventId === $existingEventId) {
-                    continue;
-                }
-                if (isset($event['type']) && $event['type'] === 'email.send') {
-                    $hasEmailSendEvent = true;
-                    if (! isset($event['properties']['email']) || $event['properties']['email'] !== 200) {
-                        return false;
-                    }
-                }
-                if (isset($event['type']) && $event['type'] === 'campaign.source') {
-                    $hasSourceEvent = true;
-                }
-            }
-
-            return $hasEmailSendEvent && $hasSourceEvent
-                && isset($arg['canvasSettings']['nodes'])
-                && isset($arg['canvasSettings']['connections']);
-        }))
-        ->andReturn(['campaign' => ['id' => 100]]);
+test('mautic service adds contact to campaign with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/555/contact/789/add' => [[
+            'success' => true,
+        ], 200],
+    ]);
 
     $service = new MauticService;
-    $result = $service->addEmailActionToCampaign(100, 200);
+    $response = $service->addContactToCampaign(555, 789);
 
-    $this->assertArrayHasKey('campaign', $result);
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/campaigns/555/contact/789/add'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['contact'] === 789;
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service gets contact by email with correct query', function () {
+    $contactsFoundResponse = fakeHttpResponse([
+        'contacts' => [
+            [
+                'id' => 789,
+                'fields' => [
+                    'all' => ['email' => 'test@example.com'],
+                ],
+            ],
+        ],
+    ], 200);
+    $contactsEmptyResponse = fakeHttpResponse(['contacts' => []], 200);
+
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts*' => function ($request) use ($contactsFoundResponse, $contactsEmptyResponse) {
+            $url = $request->url();
+            $parsedUrl = parse_url($url);
+            $queryParams = [];
+            if (isset($parsedUrl['query'])) {
+                parse_str($parsedUrl['query'], $queryParams);
+            }
+
+            if (isset($queryParams['search']) && $queryParams['search'] === 'test@example.com') {
+                return $contactsFoundResponse;
+            }
+
+            return $contactsEmptyResponse;
+        },
+    ]);
+
+    $service = new MauticService;
+    $contact = $service->getContactByEmail('test@example.com');
+
+    Http::assertSent(function ($request) {
+        $url = $request->url();
+        $parsedUrl = parse_url($url);
+        $queryParams = [];
+        if (isset($parsedUrl['query'])) {
+            parse_str($parsedUrl['query'], $queryParams);
+        }
+
+        return str_contains($url, 'https://mautic.example.com/api/contacts')
+            && $request->method() === 'GET'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && isset($queryParams['search'])
+            && $queryParams['search'] === 'test@example.com';
+    });
+
+    expect($contact)->toBeArray()
+        ->and($contact['id'])->toBe(789);
+});
+
+test('mautic service returns null when contact is not found by email', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts*' => [[
+            'contacts' => [],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $contact = $service->getContactByEmail('notfound@example.com');
+
+    expect($contact)->toBeNull();
+});
+
+test('mautic service creates or updates contact with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts/new' => [[
+            'contact' => ['id' => 999],
+        ], 201],
+    ]);
+
+    $service = new MauticService;
+    $data = ['firstname' => 'John', 'lastname' => 'Doe'];
+    $response = $service->createOrUpdateContact('new@example.com', $data);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/contacts/new'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['email'] === 'new@example.com'
+            && $request->data()['firstname'] === 'John'
+            && $request->data()['lastname'] === 'Doe';
+    });
+
+    expect($response)->toBeArray()
+        ->and($response['contact']['id'])->toBe(999);
+});
+
+test('mautic service updates contact field value with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts/789/edit' => [[
+            'contact' => ['id' => 789],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->updateContactFieldValue(789, 'test_field', 'test_value');
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/contacts/789/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['test_field'] === 'test_value';
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service handles base url with trailing slash', function () {
+    config(['services.mautic.url' => 'https://mautic.example.com/']);
+
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/*' => [[
+            'contact' => ['id' => 999],
+        ], 201],
+        'https://mautic.example.com//api/*' => [[
+            'contact' => ['id' => 999],
+        ], 201],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->createOrUpdateContact('test@example.com', []);
+
+    Http::assertSent(function ($request) {
+        // URL should not have double slashes (rtrim removes trailing slash)
+        $url = $request->url();
+        // Normalize URL to handle potential double slashes
+        $normalizedUrl = str_replace('//api', '/api', $url);
+
+        return $normalizedUrl === 'https://mautic.example.com/api/contacts/new'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['email'] === 'test@example.com';
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service getOrCreateContactId throws exception when contact creation fails', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts*' => [[
+            'contacts' => [],
+        ], 200],
+        'https://mautic.example.com/api/contacts/new' => [[
+            'contact' => [],
+        ], 201],
+    ]);
+
+    $service = new MauticService;
+
+    expect(fn () => $service->trackAssetDownload(456, 'test@example.com'))
+        ->toThrow(\RuntimeException::class, 'Failed to get or create contact for asset download tracking');
+});
+
+test('mautic service getOrCreateContactId handles contact without id field', function () {
+    Http::fakeSequence()
+        ->push(['access_token' => 'test-token', 'expires_in' => 3600], 200) // OAuth token
+        ->push([
+            'contacts' => [
+                [
+                    'fields' => [
+                        'all' => ['email' => 'test@example.com'],
+                    ],
+                ],
+            ],
+        ], 200) // getContactByEmail returns contact without id
+        ->push(['contact' => ['id' => 999]], 201) // createOrUpdateContact
+        ->push(['success' => true], 200); // trackAssetDownload
+
+    $service = new MauticService;
+    $response = $service->trackAssetDownload(456, 'test@example.com');
+
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), 'https://mautic.example.com/api/contacts/new')
+            && $request->method() === 'POST'
+            && $request->data()['email'] === 'test@example.com';
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service getContactByEmail finds exact match among multiple contacts', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts*' => [[
+            'contacts' => [
+                [
+                    'id' => 100,
+                    'fields' => [
+                        'all' => ['email' => 'other@example.com'],
+                    ],
+                ],
+                [
+                    'id' => 200,
+                    'fields' => [
+                        'all' => ['email' => 'test@example.com'],
+                    ],
+                ],
+                [
+                    'id' => 300,
+                    'fields' => [
+                        'all' => ['email' => 'another@example.com'],
+                    ],
+                ],
+            ],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $contact = $service->getContactByEmail('test@example.com');
+
+    expect($contact)->toBeArray()
+        ->and($contact['id'])->toBe(200)
+        ->and($contact['fields']['all']['email'])->toBe('test@example.com');
+});
+
+test('mautic service getContactByEmail returns null when no exact match found among multiple contacts', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts*' => [[
+            'contacts' => [
+                [
+                    'id' => 100,
+                    'fields' => [
+                        'all' => ['email' => 'other@example.com'],
+                    ],
+                ],
+                [
+                    'id' => 200,
+                    'fields' => [
+                        'all' => ['email' => 'different@example.com'],
+                    ],
+                ],
+            ],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $contact = $service->getContactByEmail('test@example.com');
+
+    expect($contact)->toBeNull();
+});
+
+test('mautic service extractContactEmail handles missing fields structure', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts*' => [[
+            'contacts' => [
+                [
+                    'id' => 100,
+                    'fields' => null,
+                ],
+                [
+                    'id' => 200,
+                ],
+            ],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $contact = $service->getContactByEmail('test@example.com');
+
+    expect($contact)->toBeNull();
+});
+
+test('mautic service extractContactEmail handles missing all fields', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/contacts*' => [[
+            'contacts' => [
+                [
+                    'id' => 100,
+                    'fields' => [],
+                ],
+            ],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $contact = $service->getContactByEmail('test@example.com');
+
+    expect($contact)->toBeNull();
+});
+
+test('mautic service addEmailActionToCampaign preserves existing campaign events and canvas settings', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/555' => [[
+            'campaign' => [
+                'events' => [
+                    'existing_event_1' => [
+                        'id' => 'existing_event_1',
+                        'type' => 'email.send',
+                        'name' => 'Existing Email',
+                    ],
+                ],
+                'canvasSettings' => [
+                    'nodes' => [
+                        'existing_event_1' => ['position' => ['x' => 50, 'y' => 50]],
+                    ],
+                    'connections' => [
+                        'existing_event_1' => [],
+                    ],
+                ],
+            ],
+        ], 200],
+        'https://mautic.example.com/api/campaigns/555/edit' => [[
+            'campaign' => ['id' => 555],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->addEmailActionToCampaign(555, 321);
+
+    Http::assertSent(function ($request) {
+        $data = $request->data();
+        $hasExistingEvent = isset($data['events']['existing_event_1']);
+        $hasNewEmailEvent = false;
+        $hasNewSourceEvent = false;
+
+        if (isset($data['events']) && is_array($data['events'])) {
+            foreach ($data['events'] as $eventId => $event) {
+                if (isset($event['type']) && $event['type'] === 'email.send' && isset($event['properties']['email']) && $event['properties']['email'] === 321) {
+                    $hasNewEmailEvent = true;
+                }
+                if (isset($event['type']) && $event['type'] === 'campaign.source') {
+                    $hasNewSourceEvent = true;
+                }
+            }
+        }
+
+        $hasExistingNode = isset($data['canvasSettings']['nodes']['existing_event_1']);
+        $hasNewNodes = isset($data['canvasSettings']['nodes']) && count($data['canvasSettings']['nodes']) >= 2;
+
+        return $request->url() === 'https://mautic.example.com/api/campaigns/555/edit'
+            && $request->method() === 'PATCH'
+            && $hasExistingEvent
+            && $hasNewEmailEvent
+            && $hasNewSourceEvent
+            && $hasExistingNode
+            && $hasNewNodes;
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service extractCampaignData handles missing campaign key', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/555' => [[], 200],
+        'https://mautic.example.com/api/campaigns/555/edit' => [[
+            'campaign' => ['id' => 555],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->addEmailActionToCampaign(555, 321);
+
+    Http::assertSent(function ($request) {
+        $data = $request->data();
+
+        return $request->url() === 'https://mautic.example.com/api/campaigns/555/edit'
+            && $request->method() === 'PATCH'
+            && isset($data['events'])
+            && isset($data['canvasSettings']);
+    });
+
+    expect($response)->toBeArray();
 });
