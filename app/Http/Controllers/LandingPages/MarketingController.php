@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LandingPages;
 
+use App\Events\NewLead;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ContactFormRequest;
 use App\Models\Contact;
@@ -19,7 +20,7 @@ class MarketingController extends Controller
     {
         $validated = $request->validated();
 
-        Contact::updateOrCreate(
+        $contact = Contact::updateOrCreate(
             ['email' => $validated['email']],
             [
                 'name' => $validated['name'],
@@ -28,6 +29,8 @@ class MarketingController extends Controller
                 'marketing' => true,
             ]
         );
+
+        NewLead::dispatch($contact, 'automation');
 
         return redirect()->route('marketing.thank-you')
             ->with('success', 'Thank you! Check your email for the free guide.');

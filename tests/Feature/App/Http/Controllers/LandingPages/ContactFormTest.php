@@ -2,12 +2,17 @@
 
 namespace Tests\Feature\App\Http\Controllers\LandingPages;
 
+use App\Events\NewLead;
 use App\Models\Contact;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
 test('automation form stores contact', function () {
+    Event::fake();
+
     $data = [
         'name' => 'John Doe',
         'email' => 'john@example.com',
@@ -28,9 +33,16 @@ test('automation form stores contact', function () {
         'marketing' => false,
         'software_development' => false,
     ]);
+
+    Event::assertDispatched(NewLead::class, function ($event) {
+        return $event->category === 'automation'
+            && $event->contact->email === 'john@example.com';
+    });
 });
 
 test('automation form stores contact with phone', function () {
+    Notification::fake();
+
     $data = [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
@@ -62,6 +74,8 @@ test('automation form validates required fields', function () {
 });
 
 test('automation form validates email format', function () {
+    Notification::fake();
+
     $data = [
         'name' => 'John Doe',
         'email' => 'invalid-email',
@@ -74,6 +88,8 @@ test('automation form validates email format', function () {
 });
 
 test('marketing form stores contact', function () {
+    Event::fake();
+
     $data = [
         'name' => 'John Doe',
         'email' => 'john@example.com',
@@ -94,9 +110,16 @@ test('marketing form stores contact', function () {
         'automation' => false,
         'software_development' => false,
     ]);
+
+    Event::assertDispatched(NewLead::class, function ($event) {
+        return $event->category === 'automation'
+            && $event->contact->email === 'john@example.com';
+    });
 });
 
 test('marketing form stores contact with phone', function () {
+    Notification::fake();
+
     $data = [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
@@ -128,6 +151,8 @@ test('marketing form validates required fields', function () {
 });
 
 test('software development form stores contact', function () {
+    Event::fake();
+
     $data = [
         'name' => 'John Doe',
         'email' => 'john@example.com',
@@ -148,9 +173,16 @@ test('software development form stores contact', function () {
         'marketing' => false,
         'automation' => false,
     ]);
+
+    Event::assertDispatched(NewLead::class, function ($event) {
+        return $event->category === 'automation'
+            && $event->contact->email === 'john@example.com';
+    });
 });
 
 test('software development form stores contact with phone', function () {
+    Notification::fake();
+
     $data = [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
@@ -202,6 +234,8 @@ test('contact buyer defaults to false', function () {
 });
 
 test('automation form updates existing contact', function () {
+    Notification::fake();
+
     $existingContact = Contact::create([
         'name' => 'Old Name',
         'email' => 'john@example.com',
@@ -234,6 +268,8 @@ test('automation form updates existing contact', function () {
 });
 
 test('marketing form updates existing contact and resets do_not_contact', function () {
+    Notification::fake();
+
     $existingContact = Contact::create([
         'name' => 'Old Name',
         'email' => 'jane@example.com',
@@ -263,6 +299,8 @@ test('marketing form updates existing contact and resets do_not_contact', functi
 });
 
 test('software development form updates existing contact', function () {
+    Notification::fake();
+
     $existingContact = Contact::create([
         'name' => 'Old Name',
         'email' => 'test@example.com',

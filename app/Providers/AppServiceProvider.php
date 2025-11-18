@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
+use App\Events\NewLead;
+use App\Listeners\NewLeadSlackListener;
 use App\Models\Purchase;
 use App\Observers\PurchaseObserver;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        Event::listen(
+            NewLead::class,
+            NewLeadSlackListener::class,
+        );
     }
 
     /**
