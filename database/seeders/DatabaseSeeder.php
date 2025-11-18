@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
 
         if (config('app.env') === 'local') {
             $this->call([
-                EbookSeeder::class,
+                // EbookSeeder::class,
             ]);
         }
     }

@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Ebook;
 use App\Models\Purchase;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\Stripe;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ShopController extends Controller
 {
@@ -29,7 +32,7 @@ class ShopController extends Controller
     /**
      * Show checkout page with cart items.
      */
-    public function checkout(): View
+    public function checkout(): View|\Illuminate\Http\RedirectResponse
     {
         $cart = session()->get('cart', []);
 
@@ -171,5 +174,38 @@ class ShopController extends Controller
             'purchases' => $purchases,
             'total' => $total,
         ]);
+    }
+
+    /**
+     * Download ebook with confirmation hash.
+     */
+    public function downloadEbook(Request $request, Ebook $ebook, ?string $confirmation = null): View|RedirectResponse|StreamedResponse
+    {
+        // Get confirmation from URL parameter or query string
+        $confirmation = $confirmation ?? $request->query('confirmation');
+
+        // If no confirmation hash provided, show form to request it
+        if (! $confirmation) {
+            return view('shop.download-confirmation', compact('ebook'));
+        }
+
+        // Find purchase with matching confirmation hash and ebook
+        $purchase = Purchase::where('ebook_id', $ebook->id)
+            ->where('confirmation_hash', $confirmation)
+            ->where('status', 'completed')
+            ->first();
+
+        if (! $purchase) {
+            return redirect()->route('ebooks.download', ['ebook' => $ebook->id])
+                ->with('error', __('Invalid confirmation hash. Please check your email for the correct download link.'));
+        }
+
+        // Check if file exists
+        if (! $ebook->file || ! Storage::exists($ebook->file)) {
+            abort(404, __('File not found.'));
+        }
+
+        // Download the file
+        return Storage::download($ebook->file);
     }
 }

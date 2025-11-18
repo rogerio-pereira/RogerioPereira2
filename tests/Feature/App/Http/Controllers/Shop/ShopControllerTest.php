@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Ebook;
 use App\Models\Purchase;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 
 test('shop index displays all ebooks with files', function () {
     $category = Category::factory()->create();
@@ -560,4 +561,189 @@ test('success page handles null purchase parameter', function () {
     $this->assertNull($data['purchase']);
     $this->assertEmpty($data['purchases']);
     $this->assertEquals(0, $data['total']);
+});
+
+test('download ebook shows form when no confirmation hash provided', function () {
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => 'ebooks/test.pdf',
+    ]);
+
+    $response = $this->get(route('ebooks.download', ['ebook' => $ebook->id]));
+
+    $response->assertStatus(200);
+    $response->assertViewIs('shop.download-confirmation');
+    $response->assertViewHas('ebook');
+    $response->assertSee($ebook->name);
+});
+
+test('download ebook shows form when confirmation hash is empty in query string', function () {
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => 'ebooks/test.pdf',
+    ]);
+
+    $response = $this->get(route('ebooks.download', ['ebook' => $ebook->id, 'confirmation' => '']));
+
+    $response->assertStatus(200);
+    $response->assertViewIs('shop.download-confirmation');
+});
+
+test('download ebook returns error when confirmation hash is invalid', function () {
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => 'ebooks/test.pdf',
+    ]);
+
+    $response = $this->get(route('ebooks.download', [
+        'ebook' => $ebook->id,
+        'confirmation' => 'invalid-hash-123',
+    ]));
+
+    $response->assertRedirect(route('ebooks.download', ['ebook' => $ebook->id]));
+    $response->assertSessionHas('error');
+});
+
+test('download ebook returns error when purchase does not exist', function () {
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => 'ebooks/test.pdf',
+    ]);
+
+    // Create a purchase with a different hash
+    $purchase = Purchase::create([
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'ebook_id' => $ebook->id,
+        'amount' => 29.99,
+        'currency' => 'usd',
+        'status' => 'completed',
+        'completed_at' => now(),
+        'confirmation_hash' => 'different-hash',
+    ]);
+
+    $response = $this->get(route('ebooks.download', [
+        'ebook' => $ebook->id,
+        'confirmation' => 'wrong-hash',
+    ]));
+
+    $response->assertRedirect(route('ebooks.download', ['ebook' => $ebook->id]));
+    $response->assertSessionHas('error');
+});
+
+test('download ebook returns error when purchase status is not completed', function () {
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => 'ebooks/test.pdf',
+    ]);
+
+    $purchase = Purchase::create([
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'ebook_id' => $ebook->id,
+        'amount' => 29.99,
+        'currency' => 'usd',
+        'status' => 'pending',
+        'confirmation_hash' => 'test-hash-123',
+    ]);
+
+    $response = $this->get(route('ebooks.download', [
+        'ebook' => $ebook->id,
+        'confirmation' => 'test-hash-123',
+    ]));
+
+    $response->assertRedirect(route('ebooks.download', ['ebook' => $ebook->id]));
+    $response->assertSessionHas('error');
+});
+
+test('download ebook returns 404 when file does not exist', function () {
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => null,
+    ]);
+
+    $purchase = Purchase::create([
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'ebook_id' => $ebook->id,
+        'amount' => 29.99,
+        'currency' => 'usd',
+        'status' => 'completed',
+        'completed_at' => now(),
+        'confirmation_hash' => 'test-hash-123',
+    ]);
+
+    $response = $this->get(route('ebooks.download', [
+        'ebook' => $ebook->id,
+        'confirmation' => 'test-hash-123',
+    ]));
+
+    $response->assertStatus(404);
+});
+
+test('download ebook allows download with valid confirmation hash', function () {
+    Storage::fake('local');
+
+    $category = Category::factory()->create();
+    $file = \Illuminate\Http\UploadedFile::fake()->create('test.pdf', 1000);
+    $path = Storage::putFile('ebooks', $file, 'public');
+
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => $path,
+    ]);
+
+    $purchase = Purchase::create([
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'ebook_id' => $ebook->id,
+        'amount' => 29.99,
+        'currency' => 'usd',
+        'status' => 'completed',
+        'completed_at' => now(),
+        'confirmation_hash' => 'test-hash-123',
+    ]);
+
+    $response = $this->get(route('ebooks.download', [
+        'ebook' => $ebook->id,
+        'confirmation' => 'test-hash-123',
+    ]));
+
+    $response->assertStatus(200);
+    $response->assertDownload();
+});
+
+test('download ebook accepts confirmation hash via query string', function () {
+    Storage::fake('local');
+
+    $category = Category::factory()->create();
+    $file = \Illuminate\Http\UploadedFile::fake()->create('test.pdf', 1000);
+    $path = Storage::putFile('ebooks', $file, 'public');
+
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => $path,
+    ]);
+
+    $purchase = Purchase::create([
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'ebook_id' => $ebook->id,
+        'amount' => 29.99,
+        'currency' => 'usd',
+        'status' => 'completed',
+        'completed_at' => now(),
+        'confirmation_hash' => 'test-hash-456',
+    ]);
+
+    $response = $this->get(route('ebooks.download', ['ebook' => $ebook->id]).'?confirmation=test-hash-456');
+
+    $response->assertStatus(200);
+    $response->assertDownload();
 });

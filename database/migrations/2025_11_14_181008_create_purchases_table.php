@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('currency', 3)->default('usd');
             $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
             $table->timestamp('completed_at')->nullable();
+            $table->string('confirmation_hash')->nullable()->unique();
             $table->timestamps();
         });
     }
