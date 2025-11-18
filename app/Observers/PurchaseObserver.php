@@ -2,9 +2,11 @@
 
 namespace App\Observers;
 
+use App\Mail\EbookDownloadEmail;
 use App\Models\Purchase;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class PurchaseObserver
 {
@@ -23,6 +25,17 @@ class PurchaseObserver
     }
 
     /**
+     * Send download email to customer.
+     */
+    private function sendDownloadEmail(Purchase $purchase): void
+    {
+        // Load the ebook relationship to access category
+        $purchase->load('ebook.category');
+
+        Mail::to($purchase->email)->queue(new EbookDownloadEmail($purchase));
+    }
+
+    /**
      * Handle the Purchase "created" event.
      */
     public function created(Purchase $purchase): void
@@ -31,6 +44,9 @@ class PurchaseObserver
         if ($purchase->status === 'completed' && ! $purchase->confirmation_hash) {
             $purchase->confirmation_hash = $this->generateConfirmationHash($purchase);
             $purchase->saveQuietly(); // Use saveQuietly to avoid triggering another update event
+
+            // Send download email
+            $this->sendDownloadEmail($purchase);
         }
     }
 
@@ -43,6 +59,9 @@ class PurchaseObserver
         if ($purchase->isDirty('status') && $purchase->status === 'completed' && ! $purchase->confirmation_hash) {
             $purchase->confirmation_hash = $this->generateConfirmationHash($purchase);
             $purchase->saveQuietly(); // Use saveQuietly to avoid triggering another update event
+
+            // Send download email
+            $this->sendDownloadEmail($purchase);
         }
     }
 }

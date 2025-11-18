@@ -54,9 +54,11 @@ class UserTest extends ModelTestCase
     protected function expectedCasts(): array
     {
         return [
-            ...$this->defaultCasts(),
-            'email_verified_at' => 'datetime:Y-m-d H:i:s',
+            'id' => 'int',
+            'email_verified_at' => 'datetime:Y-m-d H:i',
             'password' => 'hashed',
+            'created_at' => 'datetime:Y-m-d H:i',
+            'updated_at' => 'datetime:Y-m-d H:i',
         ];
     }
 
