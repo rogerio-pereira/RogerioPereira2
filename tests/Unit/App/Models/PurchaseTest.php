@@ -52,7 +52,9 @@ class PurchaseTest extends ModelTestCase
     {
         return [
             'amount' => 'decimal:2',
-            'completed_at' => 'datetime',
+            'completed_at' => 'datetime:m/d/Y H:i',
+            'created_at' => 'datetime:m/d/Y H:i',
+            'updated_at' => 'datetime:m/d/Y H:i',
         ];
     }
 

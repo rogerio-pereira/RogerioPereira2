@@ -52,7 +52,7 @@
                                     </div>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                                    {{ $category->created_at->format('d/m/Y H:i') }}
+                                    {{ $category->created_at }}
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                     <div class="flex items-center justify-end gap-2">

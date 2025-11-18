@@ -43,6 +43,8 @@ class Ebook extends Model
     {
         return [
             'price' => 'decimal:2',
+            'created_at' => 'datetime:d/m/Y H:i',
+            'updated_at' => 'datetime:d/m/Y H:i',
         ];
     }
 

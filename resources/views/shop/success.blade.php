@@ -166,7 +166,7 @@
                     @endif
                     
                     <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--bg-tertiary);">
-                        <strong>Date:</strong> {{ $purchase->completed_at?->format('m/d/Y H:i') ?? $purchase->created_at->format('m/d/Y H:i') }}
+                        <strong>Date:</strong> {{ $purchase->completed_at ?? $purchase->created_at }}
                     </p>
                 </div>
             @endif

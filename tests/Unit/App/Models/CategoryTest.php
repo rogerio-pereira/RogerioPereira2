@@ -43,6 +43,8 @@ class CategoryTest extends ModelTestCase
     {
         return [
             'id' => 'int',
+            'created_at' => 'datetime:d/m/Y H:i',
+            'updated_at' => 'datetime:d/m/Y H:i',
         ];
     }
 
