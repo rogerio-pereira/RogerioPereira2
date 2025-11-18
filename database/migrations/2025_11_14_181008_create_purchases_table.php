@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('phone')->nullable();
-            $table->foreignId('ebook_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('ebook_id')->constrained()->cascadeOnDelete();
             $table->string('stripe_checkout_session_id')->nullable()->unique();
             $table->string('stripe_payment_intent_id')->nullable();
             $table->decimal('amount', 10, 2);

@@ -77,11 +77,13 @@ class PurchaseTest extends ModelTestCase
 
     public function test_purchase_can_be_instantiated(): void
     {
+        $ebookId = \Illuminate\Support\Str::uuid()->toString();
+
         $purchase = new Purchase;
         $purchase->name = 'John Doe';
         $purchase->email = 'john@example.com';
         $purchase->phone = '1234567890';
-        $purchase->ebook_id = 1;
+        $purchase->ebook_id = $ebookId;
         $purchase->stripe_payment_intent_id = 'pi_test123';
         $purchase->amount = 29.99;
         $purchase->currency = 'usd';
@@ -90,7 +92,7 @@ class PurchaseTest extends ModelTestCase
         $this->assertEquals('John Doe', $purchase->name);
         $this->assertEquals('john@example.com', $purchase->email);
         $this->assertEquals('1234567890', $purchase->phone);
-        $this->assertEquals(1, $purchase->ebook_id);
+        $this->assertEquals($ebookId, $purchase->ebook_id);
         $this->assertEquals('pi_test123', $purchase->stripe_payment_intent_id);
         $this->assertEquals(29.99, $purchase->amount);
         $this->assertEquals('usd', $purchase->currency);

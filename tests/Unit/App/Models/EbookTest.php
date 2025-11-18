@@ -3,6 +3,7 @@
 namespace Tests\Unit\App\Models;
 
 use App\Models\Ebook;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Tests\Unit\App\Models\Contracts\ModelTestCase;
@@ -23,6 +24,7 @@ class EbookTest extends ModelTestCase
     {
         return [
             HasFactory::class,
+            HasUuids::class,
         ];
     }
 
@@ -46,9 +48,18 @@ class EbookTest extends ModelTestCase
     protected function expectedCasts(): array
     {
         return [
-            'id' => 'int',
             'price' => 'decimal:2',
         ];
+    }
+
+    protected function expectedIncrementing(): bool
+    {
+        return false; // UUID
+    }
+
+    protected function expectedPrimaryKeyType(): ?string
+    {
+        return 'string'; // UUID
     }
 
     /*
