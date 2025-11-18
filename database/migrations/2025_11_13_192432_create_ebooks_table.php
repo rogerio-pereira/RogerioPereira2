@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('mautic_field_alias')->nullable();
             $table->integer('mautic_email_id')->nullable();
             $table->string('mautic_email_name')->nullable();
+            $table->integer('mautic_segment_id')->nullable();
             $table->integer('mautic_campaign_id')->nullable();
             $table->text('last_email_html')->nullable();
             $table->timestamps();

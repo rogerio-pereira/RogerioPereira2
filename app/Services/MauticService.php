@@ -82,8 +82,7 @@ class MauticService extends HttpClient
         $data = [
             'title' => $name,
             'storageLocation' => 'remote',
-            'remotePath' => $url,
-            'isPublished' => true,
+            'file' => $url,
         ];
 
         return $this->request('POST', 'assets/new', $data);
@@ -138,9 +137,24 @@ class MauticService extends HttpClient
         $data = [
             'name' => $name,
             'subject' => $subject,
-            'body' => $html,
+            'customHtml' => $html,
             'emailType' => 'template',
             'isPublished' => true,
+        ];
+
+        return $this->request('POST', 'emails/new', $data);
+    }
+
+    public function createSegmentEmail(string $name, string $subject, string $html, array $segmentIds): array
+    {
+        $data = [
+            'name' => $name,
+            'subject' => $subject,
+            'customHtml' => $html,
+            'emailType' => 'list',
+            'isPublished' => true,
+            'publicPreview' => true, // Enable "Publicly up to date" for automatic sending
+            'lists' => $segmentIds,
         ];
 
         return $this->request('POST', 'emails/new', $data);
@@ -160,12 +174,95 @@ class MauticService extends HttpClient
         return $this->updateEmail($id, $unpublishData);
     }
 
-    public function createCampaign(string $name, string $description = ''): array
+    public function createSegment(string $name, string $fieldAlias): array
     {
+        // Create segment without filters first (Mautic API doesn't accept filters on creation for custom fields)
+        $data = [
+            'name' => $name,
+            'alias' => $this->generateSegmentAlias($name),
+            'isPublished' => true,
+        ];
+
+        $response = $this->request('POST', 'segments/new', $data);
+        $segmentId = $response['list']['id'] ?? null;
+
+        if ($segmentId === null) {
+            return $response;
+        }
+
+        // Add filter via update
+        $updateData = [
+            'filters' => [
+                [
+                    'glue' => 'and',
+                    'field' => $fieldAlias,
+                    'object' => 'lead',
+                    'type' => 'text',
+                    'operator' => '!empty',
+                    'properties' => [
+                        'filter' => '',
+                    ],
+                ],
+            ],
+        ];
+
+        return $this->updateSegment($segmentId, $updateData);
+    }
+
+    public function updateSegment(int $id, array $data): array
+    {
+        $endpoint = "segments/{$id}/edit";
+
+        // Ensure segment remains published after update
+        if (! isset($data['isPublished'])) {
+            $data['isPublished'] = true;
+        }
+
+        return $this->request('PATCH', $endpoint, $data);
+    }
+
+    public function unpublishSegment(int $id): array
+    {
+        $unpublishData = ['isPublished' => false];
+
+        return $this->updateSegment($id, $unpublishData);
+    }
+
+    public function createCampaign(string $name, string $description = '', ?int $emailId = null, ?int $segmentId = null): array
+    {
+        // Mautic requires at least one event to create a campaign
+        // Based on documentation, we need to create with events in a specific format
+        $sourceEventId = $this->generateSourceEventId();
+
+        $events = [
+            $sourceEventId => $this->createSourceEvent($sourceEventId, $segmentId),
+        ];
+
+        $canvasSettings = [
+            'nodes' => [
+                $sourceEventId => $this->createNodePosition(100, 100),
+            ],
+            'connections' => [],
+        ];
+
+        // If email ID is provided, add email action immediately
+        if ($emailId !== null) {
+            $emailEventId = $this->generateEmailEventId();
+            $events[$emailEventId] = $this->createEmailSendEvent($emailEventId, $emailId);
+            $canvasSettings['nodes'][$emailEventId] = $this->createNodePosition(300, 100);
+            $canvasSettings['connections'][$sourceEventId] = $this->createConnection($emailEventId);
+
+            // Update source event to include email event in children
+            $events[$sourceEventId]['children'] = [$emailEventId];
+            $events[$emailEventId]['parent'] = $sourceEventId;
+        }
+
         $data = [
             'name' => $name,
             'description' => $description,
             'isPublished' => true,
+            'events' => $events,
+            'canvasSettings' => $canvasSettings,
         ];
 
         return $this->request('POST', 'campaigns/new', $data);
@@ -246,31 +343,59 @@ class MauticService extends HttpClient
         return [
             'id' => $eventId,
             'type' => 'email.send',
+            'eventType' => 'action',
             'name' => 'Send Email',
             'description' => null,
             'order' => 1,
             'properties' => ['email' => $emailId],
             'triggerMode' => 'immediate',
             'triggerDate' => null,
-            'anchor' => 'no',
-            'anchorEventType' => null,
+            'triggerInterval' => null,
+            'triggerIntervalUnit' => null,
+            'children' => [],
+            'parent' => null,
+            'decisionPath' => null,
         ];
     }
 
-    protected function createSourceEvent(string $eventId): array
+    protected function createSourceEvent(string $eventId, ?int $segmentId = null): array
     {
+        $properties = [];
+
+        // If segment ID is provided, add it to properties
+        if ($segmentId !== null) {
+            $properties = [
+                'source' => 'lists',
+                'lists' => [$segmentId],
+            ];
+        }
+
         return [
             'id' => $eventId,
             'type' => 'campaign.source',
+            'eventType' => 'source',
             'name' => 'Campaign Source',
             'description' => null,
             'order' => 0,
-            'properties' => [],
+            'properties' => $properties,
             'triggerMode' => 'immediate',
             'triggerDate' => null,
-            'anchor' => 'no',
-            'anchorEventType' => null,
+            'triggerInterval' => null,
+            'triggerIntervalUnit' => null,
+            'children' => [],
+            'parent' => null,
+            'decisionPath' => null,
         ];
+    }
+
+    protected function generateSegmentAlias(string $name): string
+    {
+        // Generate a safe alias from the name
+        $alias = strtolower($name);
+        $alias = preg_replace('/[^a-z0-9]+/', '_', $alias);
+        $alias = trim($alias, '_');
+
+        return $alias.'_'.time();
     }
 
     protected function buildCanvasSettings(

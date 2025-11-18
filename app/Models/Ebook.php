@@ -37,6 +37,7 @@ class Ebook extends Model
         'mautic_field_alias',
         'mautic_email_id',
         'mautic_email_name',
+        'mautic_segment_id',
         'mautic_campaign_id',
         'last_email_html',
     ];

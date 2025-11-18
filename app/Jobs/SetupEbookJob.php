@@ -59,9 +59,12 @@ class SetupEbookJob implements ShouldQueue
                 throw new \RuntimeException('Failed to create Mautic contact field');
             }
 
+            // Use the actual alias returned by Mautic (may be truncated)
+            $actualFieldAlias = $fieldResponse['field']['alias'] ?? $fieldAlias;
+
             $createdResources['field'] = $fieldId;
             $ebook->mautic_field_id = $fieldId;
-            $ebook->mautic_field_alias = $fieldAlias;
+            $ebook->mautic_field_alias = $actualFieldAlias;
             $ebook->save();
 
             // Create asset
@@ -77,15 +80,31 @@ class SetupEbookJob implements ShouldQueue
             $ebook->mautic_asset_id = $assetId;
             $ebook->save();
 
-            // Create email
+            // Create segment FIRST (required for segment email)
+            $segmentName = $ebook->name; // Same name as asset
+            $segmentResponse = $mauticService->createSegment($segmentName, $actualFieldAlias);
+            $segmentId = $segmentResponse['list']['id'] ?? null;
+
+            if ($segmentId === null) {
+                throw new \RuntimeException('Failed to create Mautic segment');
+            }
+
+            $createdResources['segment'] = $segmentId;
+            $ebook->mautic_segment_id = $segmentId;
+            $ebook->save();
+
+            // Ensure segment is published (activate it)
+            $mauticService->updateSegment($segmentId, ['isPublished' => true]);
+
+            // Create segment email (emailType: "list") linked to the segment
             $emailName = "deliver_ebook_{$ebook->slug}";
             $emailSubject = "Your e-book: {$ebook->name}";
-            $emailHtml = $this->generateEmailTemplate($ebook, $fieldAlias);
-            $emailResponse = $mauticService->createEmail($emailName, $emailSubject, $emailHtml);
+            $emailHtml = $this->generateEmailTemplate($ebook, $actualFieldAlias);
+            $emailResponse = $mauticService->createSegmentEmail($emailName, $emailSubject, $emailHtml, [$segmentId]);
             $emailId = $emailResponse['email']['id'] ?? null;
 
             if ($emailId === null) {
-                throw new \RuntimeException('Failed to create Mautic email');
+                throw new \RuntimeException('Failed to create Mautic segment email');
             }
 
             $createdResources['email'] = $emailId;
@@ -94,23 +113,15 @@ class SetupEbookJob implements ShouldQueue
             $ebook->last_email_html = $emailHtml;
             $ebook->save();
 
-            // Create campaign
-            $campaignName = "campaign_deliver_ebook_{$ebook->slug}";
-            $campaignDescription = "Automatic delivery of e-book {$ebook->name}";
-            $campaignResponse = $mauticService->createCampaign($campaignName, $campaignDescription);
-            $campaignId = $campaignResponse['campaign']['id'] ?? null;
+            // Ensure email is published (activate it)
+            $mauticService->updateEmail($emailId, ['isPublished' => true]);
 
-            if ($campaignId === null) {
-                throw new \RuntimeException('Failed to create Mautic campaign');
-            }
-
-            $createdResources['campaign'] = $campaignId;
-
-            // Add email action to campaign
-            $mauticService->addEmailActionToCampaign($campaignId, $emailId);
-
-            $ebook->mautic_campaign_id = $campaignId;
-            $ebook->save();
+            // Note: We don't create campaigns via API because Mautic API doesn't support
+            // creating functional campaigns with source events. Instead, we use:
+            // Custom Field → Segment (with filter) → Email
+            // When a contact purchases an ebook, we update the custom field,
+            // the contact automatically enters the segment, and the email can be
+            // sent manually via API or configured in Mautic UI to send automatically.
 
         } catch (\Exception $e) {
             $rollbackNeeded = true;
@@ -160,12 +171,12 @@ class SetupEbookJob implements ShouldQueue
      */
     private function rollbackResources(MauticService $mauticService, array $createdResources): void
     {
-        if (isset($createdResources['campaign'])) {
+        if (isset($createdResources['segment'])) {
             try {
-                $mauticService->unpublishCampaign($createdResources['campaign']);
+                $mauticService->unpublishSegment($createdResources['segment']);
             } catch (\Exception $e) {
-                Log::warning('Failed to rollback campaign', [
-                    'campaign_id' => $createdResources['campaign'],
+                Log::warning('Failed to rollback segment', [
+                    'segment_id' => $createdResources['segment'],
                     'error' => $e->getMessage(),
                 ]);
             }

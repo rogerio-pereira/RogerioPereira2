@@ -50,6 +50,7 @@ class EbookTest extends ModelTestCase
             'mautic_field_alias',
             'mautic_email_id',
             'mautic_email_name',
+            'mautic_segment_id',
             'mautic_campaign_id',
             'last_email_html',
         ];
@@ -104,6 +105,7 @@ class EbookTest extends ModelTestCase
         $this->assertNull($ebook->mautic_field_alias);
         $this->assertNull($ebook->mautic_email_id);
         $this->assertNull($ebook->mautic_email_name);
+        $this->assertNull($ebook->mautic_segment_id);
         $this->assertNull($ebook->mautic_campaign_id);
         $this->assertNull($ebook->last_email_html);
     }
@@ -119,6 +121,7 @@ class EbookTest extends ModelTestCase
         $ebook->mautic_field_alias = 'ebook_test_purchased';
         $ebook->mautic_email_id = 789;
         $ebook->mautic_email_name = 'deliver_ebook_test';
+        $ebook->mautic_segment_id = 202;
         $ebook->mautic_campaign_id = 101;
         $ebook->last_email_html = '<html>Test</html>';
 
@@ -127,6 +130,7 @@ class EbookTest extends ModelTestCase
         $this->assertEquals('ebook_test_purchased', $ebook->mautic_field_alias);
         $this->assertEquals(789, $ebook->mautic_email_id);
         $this->assertEquals('deliver_ebook_test', $ebook->mautic_email_name);
+        $this->assertEquals(202, $ebook->mautic_segment_id);
         $this->assertEquals(101, $ebook->mautic_campaign_id);
         $this->assertEquals('<html>Test</html>', $ebook->last_email_html);
     }

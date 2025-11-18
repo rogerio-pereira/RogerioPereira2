@@ -109,8 +109,7 @@ test('mautic service creates asset with correct data', function () {
             && $request->hasHeader('Authorization', 'Bearer test-token')
             && $request->data()['title'] === 'Test Asset'
             && $request->data()['storageLocation'] === 'remote'
-            && $request->data()['remotePath'] === 'https://example.com/file.pdf'
-            && $request->data()['isPublished'] === true;
+            && $request->data()['file'] === 'https://example.com/file.pdf';
     });
 
     expect($response)->toBeArray()
@@ -240,7 +239,7 @@ test('mautic service creates email with correct data', function () {
             && $request->hasHeader('Authorization', 'Bearer test-token')
             && $request->data()['name'] === 'test_email'
             && $request->data()['subject'] === 'Test Subject'
-            && $request->data()['body'] === $html
+            && $request->data()['customHtml'] === $html
             && $request->data()['emailType'] === 'template'
             && $request->data()['isPublished'] === true;
     });
@@ -881,6 +880,308 @@ test('mautic service extractCampaignData handles missing campaign key', function
             && $request->method() === 'PATCH'
             && isset($data['events'])
             && isset($data['canvasSettings']);
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service creates segment email with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/emails/new' => [[
+            'email' => ['id' => 400],
+        ], 201],
+    ]);
+
+    $service = new MauticService;
+    $html = '<html><body>Segment Email</body></html>';
+    $segmentIds = [100, 200];
+    $response = $service->createSegmentEmail('segment_email', 'Segment Subject', $html, $segmentIds);
+
+    Http::assertSent(function ($request) use ($html, $segmentIds) {
+        return $request->url() === 'https://mautic.example.com/api/emails/new'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['name'] === 'segment_email'
+            && $request->data()['subject'] === 'Segment Subject'
+            && $request->data()['customHtml'] === $html
+            && $request->data()['emailType'] === 'list'
+            && $request->data()['isPublished'] === true
+            && $request->data()['publicPreview'] === true
+            && $request->data()['lists'] === $segmentIds;
+    });
+
+    expect($response)->toBeArray()
+        ->and($response['email']['id'])->toBe(400);
+});
+
+test('mautic service creates segment with filter when segment is created successfully', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/segments/new' => [[
+            'list' => ['id' => 500],
+        ], 201],
+        'https://mautic.example.com/api/segments/500/edit' => [[
+            'list' => ['id' => 500, 'isPublished' => true],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->createSegment('Test Segment', 'field_alias');
+
+    Http::assertSent(function ($request) {
+        if ($request->url() === 'https://mautic.example.com/api/segments/new') {
+            return $request->method() === 'POST'
+                && $request->data()['name'] === 'Test Segment'
+                && $request->data()['isPublished'] === true;
+        }
+
+        if ($request->url() === 'https://mautic.example.com/api/segments/500/edit') {
+            $data = $request->data();
+
+            return $request->method() === 'PATCH'
+                && isset($data['filters'])
+                && is_array($data['filters'])
+                && count($data['filters']) === 1
+                && $data['filters'][0]['field'] === 'field_alias'
+                && $data['filters'][0]['operator'] === '!empty'
+                && $data['isPublished'] === true;
+        }
+
+        return false;
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service returns response when segment creation fails', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/segments/new' => [[
+            'errors' => [['message' => 'Segment creation failed']],
+        ], 400],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->createSegment('Test Segment', 'field_alias');
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/segments/new'
+            && $request->method() === 'POST';
+    });
+
+    expect($response)->toBeArray()
+        ->and($response)->toHaveKey('errors');
+});
+
+test('mautic service updateSegment ensures published when isPublished not provided', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/segments/500/edit' => [[
+            'list' => ['id' => 500, 'isPublished' => true],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $data = ['name' => 'Updated Segment'];
+    $response = $service->updateSegment(500, $data);
+
+    Http::assertSent(function ($request) {
+        $data = $request->data();
+
+        return $request->url() === 'https://mautic.example.com/api/segments/500/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $data['name'] === 'Updated Segment'
+            && $data['isPublished'] === true;
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service updateSegment respects isPublished when provided', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/segments/500/edit' => [[
+            'list' => ['id' => 500, 'isPublished' => false],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $data = ['name' => 'Updated Segment', 'isPublished' => false];
+    $response = $service->updateSegment(500, $data);
+
+    Http::assertSent(function ($request) {
+        $data = $request->data();
+
+        return $request->url() === 'https://mautic.example.com/api/segments/500/edit'
+            && $request->method() === 'PATCH'
+            && $data['isPublished'] === false;
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service unpublishes segment with correct data', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/segments/500/edit' => [[
+            'list' => ['id' => 500, 'isPublished' => false],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->unpublishSegment(500);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://mautic.example.com/api/segments/500/edit'
+            && $request->method() === 'PATCH'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $request->data()['isPublished'] === false;
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service creates campaign with email and segment', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/new' => [[
+            'campaign' => ['id' => 600],
+        ], 201],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->createCampaign('Test Campaign', 'Description', 321, 100);
+
+    Http::assertSent(function ($request) {
+        $data = $request->data();
+        $hasSourceEvent = false;
+        $hasEmailEvent = false;
+        $sourceEventHasSegment = false;
+        $emailEventHasParent = false;
+
+        if (isset($data['events']) && is_array($data['events'])) {
+            foreach ($data['events'] as $eventId => $event) {
+                if (isset($event['type']) && $event['type'] === 'campaign.source') {
+                    $hasSourceEvent = true;
+                    if (isset($event['properties']['lists']) && in_array(100, $event['properties']['lists'])) {
+                        $sourceEventHasSegment = true;
+                    }
+                    if (isset($event['children']) && is_array($event['children']) && count($event['children']) > 0) {
+                        $emailEventId = $event['children'][0];
+                        if (isset($data['events'][$emailEventId])) {
+                            $emailEvent = $data['events'][$emailEventId];
+                            if (isset($emailEvent['type']) && $emailEvent['type'] === 'email.send') {
+                                $hasEmailEvent = true;
+                                if (isset($emailEvent['parent']) && $emailEvent['parent'] === $eventId) {
+                                    $emailEventHasParent = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $request->url() === 'https://mautic.example.com/api/campaigns/new'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Authorization', 'Bearer test-token')
+            && $data['name'] === 'Test Campaign'
+            && $data['description'] === 'Description'
+            && $hasSourceEvent
+            && $hasEmailEvent
+            && $sourceEventHasSegment
+            && $emailEventHasParent;
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service createSourceEvent includes segment when provided', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/campaigns/new' => [[
+            'campaign' => ['id' => 700],
+        ], 201],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->createCampaign('Campaign With Segment', '', null, 150);
+
+    Http::assertSent(function ($request) {
+        $data = $request->data();
+        $hasSourceEventWithSegment = false;
+
+        if (isset($data['events']) && is_array($data['events'])) {
+            foreach ($data['events'] as $event) {
+                if (isset($event['type']) && $event['type'] === 'campaign.source') {
+                    if (isset($event['properties']['source']) && $event['properties']['source'] === 'lists') {
+                        if (isset($event['properties']['lists']) && in_array(150, $event['properties']['lists'])) {
+                            $hasSourceEventWithSegment = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $hasSourceEventWithSegment;
+    });
+
+    expect($response)->toBeArray();
+});
+
+test('mautic service generateSegmentAlias creates safe alias', function () {
+    fakeHttp([
+        'https://mautic.example.com/oauth/v2/token' => [[
+            'access_token' => 'test-token',
+            'expires_in' => 3600,
+        ], 200],
+        'https://mautic.example.com/api/segments/new' => [[
+            'list' => ['id' => 800],
+        ], 201],
+        'https://mautic.example.com/api/segments/800/edit' => [[
+            'list' => ['id' => 800],
+        ], 200],
+    ]);
+
+    $service = new MauticService;
+    $response = $service->createSegment('Test Segment Name With Special Chars!@#', 'field_alias');
+
+    Http::assertSent(function ($request) {
+        if ($request->url() === 'https://mautic.example.com/api/segments/new') {
+            $data = $request->data();
+            $alias = $data['alias'] ?? '';
+
+            // Should be lowercase, no special chars except underscore, and end with timestamp
+            return preg_match('/^test_segment_name_with_special_chars_\d+$/', $alias) === 1;
+        }
+
+        return false;
     });
 
     expect($response)->toBeArray();
