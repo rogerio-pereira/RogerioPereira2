@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Core\CategoryController;
+use App\Http\Controllers\Core\DashboardController;
 use App\Http\Controllers\Core\EbookController;
 use App\Http\Controllers\LandingPages\AutomationController;
 use App\Http\Controllers\LandingPages\HomeController;
@@ -64,9 +65,7 @@ Route::post('/stripe/webhook', [WebhookController::class, 'handle'])
 Route::middleware(['auth'])
     ->prefix('core')
     ->group(function () {
-        Route::view('dashboard', 'dashboard')
-            ->middleware(['auth', 'verified'])
-            ->name('dashboard');
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::redirect('settings', 'settings/profile');
 

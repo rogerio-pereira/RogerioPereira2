@@ -4,6 +4,7 @@ namespace Tests\Unit\App\Models;
 
 use App\Models\Purchase;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Tests\Unit\App\Models\Contracts\ModelTestCase;
 
@@ -22,6 +23,7 @@ class PurchaseTest extends ModelTestCase
     protected function expectedTraits(): array
     {
         return [
+            HasFactory::class,
             HasUuids::class,
         ];
     }
