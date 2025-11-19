@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\App\Models;
 
+use App\Events\PurchaseConfirmation;
 use App\Mail\EbookDownloadEmail;
 use App\Models\Category;
 use App\Models\Ebook;
 use App\Models\Purchase;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Event;
 
 test('purchase belongs to ebook relationship', function () {
     $category = Category::factory()->create();
@@ -345,12 +346,12 @@ test('purchase observer does not generate hash when updated from completed to an
 
 /*
  * =================================================================================================================
- * Purchase Observer Email Tests
+ * Purchase Observer Event Tests
  * =================================================================================================================
  */
 
-test('purchase observer sends email when purchase is created with completed status', function () {
-    Mail::fake();
+test('purchase observer dispatches event when purchase is created with completed status', function () {
+    Event::fake([PurchaseConfirmation::class]);
 
     $category = Category::factory()->create(['name' => 'Automation']);
     $ebook = Ebook::factory()->create(['category_id' => $category->id]);
@@ -366,14 +367,13 @@ test('purchase observer sends email when purchase is created with completed stat
         'completed_at' => now(),
     ]);
 
-    Mail::assertQueued(EbookDownloadEmail::class, function ($mail) use ($purchase) {
-        return $mail->purchase->id === $purchase->id
-            && $mail->hasTo($purchase->email);
+    Event::assertDispatched(PurchaseConfirmation::class, function ($event) use ($purchase) {
+        return $event->purchase->id === $purchase->id;
     });
 });
 
-test('purchase observer sends email when status changes to completed', function () {
-    Mail::fake();
+test('purchase observer dispatches event when status changes to completed', function () {
+    Event::fake([PurchaseConfirmation::class]);
 
     $category = Category::factory()->create(['name' => 'Marketing']);
     $ebook = Ebook::factory()->create(['category_id' => $category->id]);
@@ -388,8 +388,8 @@ test('purchase observer sends email when status changes to completed', function 
         'status' => 'pending',
     ]);
 
-    // No email should be sent yet
-    Mail::assertNothingQueued();
+    // No event should be dispatched yet
+    Event::assertNotDispatched(PurchaseConfirmation::class);
 
     // Update status to completed
     $purchase->update([
@@ -397,14 +397,13 @@ test('purchase observer sends email when status changes to completed', function 
         'completed_at' => now(),
     ]);
 
-    Mail::assertQueued(EbookDownloadEmail::class, function ($mail) use ($purchase) {
-        return $mail->purchase->id === $purchase->id
-            && $mail->hasTo($purchase->email);
+    Event::assertDispatched(PurchaseConfirmation::class, function ($event) use ($purchase) {
+        return $event->purchase->id === $purchase->id;
     });
 });
 
-test('purchase observer does not send email when status is not completed', function () {
-    Mail::fake();
+test('purchase observer does not dispatch event when status is not completed', function () {
+    Event::fake([PurchaseConfirmation::class]);
 
     $category = Category::factory()->create();
     $ebook = Ebook::factory()->create(['category_id' => $category->id]);
@@ -418,156 +417,19 @@ test('purchase observer does not send email when status is not completed', funct
         'status' => 'pending',
     ]);
 
-    Mail::assertNothingQueued();
+    Event::assertNotDispatched(PurchaseConfirmation::class);
 
     // Update to failed status
     $purchase->update([
         'status' => 'failed',
     ]);
 
-    Mail::assertNothingQueued();
-});
-
-test('purchase observer sends email with correct view for automation category', function () {
-    Mail::fake();
-
-    $category = Category::factory()->create(['name' => 'Automation']);
-    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
-
-    $purchase = Purchase::create([
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'ebook_id' => $ebook->id,
-        'amount' => 29.99,
-        'currency' => 'usd',
-        'status' => 'completed',
-        'completed_at' => now(),
-    ]);
-
-    Mail::assertQueued(EbookDownloadEmail::class, function ($mail) {
-        $content = $mail->content();
-
-        return $content->view === 'emails.ebook-download.automation';
-    });
-});
-
-test('purchase observer sends email with correct view for marketing category', function () {
-    Mail::fake();
-
-    $category = Category::factory()->create(['name' => 'Marketing']);
-    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
-
-    $purchase = Purchase::create([
-        'name' => 'Jane Doe',
-        'email' => 'jane@example.com',
-        'ebook_id' => $ebook->id,
-        'amount' => 39.99,
-        'currency' => 'usd',
-        'status' => 'completed',
-        'completed_at' => now(),
-    ]);
-
-    Mail::assertQueued(EbookDownloadEmail::class, function ($mail) {
-        $content = $mail->content();
-
-        return $content->view === 'emails.ebook-download.marketing';
-    });
-});
-
-test('purchase observer sends email with correct view for software development category', function () {
-    Mail::fake();
-
-    $category = Category::factory()->create(['name' => 'Software Development']);
-    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
-
-    $purchase = Purchase::create([
-        'name' => 'Bob Smith',
-        'email' => 'bob@example.com',
-        'ebook_id' => $ebook->id,
-        'amount' => 49.99,
-        'currency' => 'usd',
-        'status' => 'completed',
-        'completed_at' => now(),
-    ]);
-
-    Mail::assertQueued(EbookDownloadEmail::class, function ($mail) {
-        $content = $mail->content();
-
-        return $content->view === 'emails.ebook-download.software-development';
-    });
-});
-
-test('purchase observer uses automation view as fallback for unknown category', function () {
-    Mail::fake();
-
-    $category = Category::factory()->create(['name' => 'Unknown Category']);
-    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
-
-    $purchase = Purchase::create([
-        'name' => 'Test User',
-        'email' => 'test@example.com',
-        'ebook_id' => $ebook->id,
-        'amount' => 29.99,
-        'currency' => 'usd',
-        'status' => 'completed',
-        'completed_at' => now(),
-    ]);
-
-    Mail::assertQueued(EbookDownloadEmail::class, function ($mail) {
-        $content = $mail->content();
-
-        return $content->view === 'emails.ebook-download.automation';
-    });
-});
-
-test('ebook download email has correct subject', function () {
-    Mail::fake();
-
-    $category = Category::factory()->create(['name' => 'Automation']);
-    $ebook = Ebook::factory()->create([
-        'category_id' => $category->id,
-        'name' => 'Test Ebook Title',
-    ]);
-
-    $purchase = Purchase::create([
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'ebook_id' => $ebook->id,
-        'amount' => 29.99,
-        'currency' => 'usd',
-        'status' => 'completed',
-        'completed_at' => now(),
-    ]);
-
-    Mail::assertQueued(EbookDownloadEmail::class, function ($mail) {
-        $envelope = $mail->envelope();
-
-        return $envelope->subject === 'Your Ebook Download - Test Ebook Title';
-    });
-});
-
-test('ebook download email is sent to correct recipient', function () {
-    Mail::fake();
-
-    $category = Category::factory()->create();
-    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
-
-    $purchase = Purchase::create([
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'ebook_id' => $ebook->id,
-        'amount' => 29.99,
-        'currency' => 'usd',
-        'status' => 'completed',
-        'completed_at' => now(),
-    ]);
-
-    Mail::assertQueued(EbookDownloadEmail::class, function ($mail) {
-        return $mail->hasTo('john@example.com');
-    });
+    Event::assertNotDispatched(PurchaseConfirmation::class);
 });
 
 test('ebook download email loads ebook relationship when not loaded in envelope', function () {
+    Event::fake();
+
     $category = Category::factory()->create(['name' => 'Automation']);
     $ebook = Ebook::factory()->create([
         'category_id' => $category->id,
@@ -595,6 +457,8 @@ test('ebook download email loads ebook relationship when not loaded in envelope'
 });
 
 test('ebook download email loads ebook relationship when not loaded in content', function () {
+    Event::fake();
+
     $category = Category::factory()->create(['name' => 'Marketing']);
     $ebook = Ebook::factory()->create(['category_id' => $category->id]);
 
@@ -619,6 +483,8 @@ test('ebook download email loads ebook relationship when not loaded in content',
 });
 
 test('ebook download email loads category relationship when ebook loaded but category not', function () {
+    Event::fake();
+
     $category = Category::factory()->create(['name' => 'Software Development']);
     $ebook = Ebook::factory()->create(['category_id' => $category->id]);
 
@@ -644,6 +510,8 @@ test('ebook download email loads category relationship when ebook loaded but cat
 });
 
 test('ebook download email uses fallback subject when ebook is null', function () {
+    Event::fake();
+
     $category = Category::factory()->create();
     $ebook = Ebook::factory()->create(['category_id' => $category->id]);
 
