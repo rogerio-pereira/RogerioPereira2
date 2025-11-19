@@ -33,9 +33,9 @@ class PurchaseObserver
             $purchase->confirmation_hash = $this->generateConfirmationHash($purchase);
             $purchase->saveQuietly(); // Use saveQuietly to avoid triggering another update event
 
-            /* 
-             * Dispatch event (will call two listeners) 
-             *      PurchaseEmailListener 
+            /*
+             * Dispatch event (will call two listeners)
+             *      PurchaseEmailListener
              *      PurchaseSlackListener
              */
             PurchaseConfirmation::dispatch($purchase);
@@ -52,9 +52,9 @@ class PurchaseObserver
             $purchase->confirmation_hash = $this->generateConfirmationHash($purchase);
             $purchase->saveQuietly(); // Use saveQuietly to avoid triggering another update event
 
-            /* 
-             * Dispatch event (will call two listeners) 
-             *      PurchaseEmailListener 
+            /*
+             * Dispatch event (will call two listeners)
+             *      PurchaseEmailListener
              *      PurchaseSlackListener
              */
             PurchaseConfirmation::dispatch($purchase);

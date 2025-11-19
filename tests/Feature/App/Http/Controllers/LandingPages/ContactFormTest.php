@@ -4,11 +4,8 @@ namespace Tests\Feature\App\Http\Controllers\LandingPages;
 
 use App\Events\NewLead;
 use App\Models\Contact;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-
-uses(RefreshDatabase::class);
 
 test('automation form stores contact', function () {
     Event::fake();

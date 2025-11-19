@@ -3,9 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Contact;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 test('unsubscribe show page displays correctly with valid uuid', function () {
     $contact = Contact::factory()->create([

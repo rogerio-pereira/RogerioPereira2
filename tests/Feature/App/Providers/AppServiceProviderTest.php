@@ -6,12 +6,8 @@ use App\Events\NewLead;
 use App\Listeners\NewLeadSlackListener;
 use App\Models\Contact;
 use App\Models\Purchase;
-use App\Observers\PurchaseObserver;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-
-uses(RefreshDatabase::class);
 
 test('app service provider registers new lead event listener', function () {
     Event::fake();

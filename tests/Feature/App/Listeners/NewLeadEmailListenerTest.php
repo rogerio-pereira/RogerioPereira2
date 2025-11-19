@@ -6,10 +6,7 @@ use App\Events\NewLead;
 use App\Listeners\NewLeadEmailListener;
 use App\Mail\NewLeadEmail;
 use App\Models\Contact;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-
-uses(RefreshDatabase::class);
 
 test('new lead email listener sends email for automation category', function () {
     Mail::fake();

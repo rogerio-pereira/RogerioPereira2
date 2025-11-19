@@ -6,11 +6,8 @@ use App\Events\NewLead;
 use App\Listeners\NewLeadSlackListener;
 use App\Models\Contact;
 use App\Notifications\SlackNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Notification;
-
-uses(RefreshDatabase::class);
 
 test('new lead slack listener handles event', function () {
     Notification::fake();

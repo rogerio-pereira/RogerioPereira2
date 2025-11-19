@@ -8,10 +8,7 @@ use App\Mail\EbookDownloadEmail;
 use App\Models\Category;
 use App\Models\Ebook;
 use App\Models\Purchase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-
-uses(RefreshDatabase::class);
 
 test('purchase email listener sends email for automation category', function () {
     Mail::fake();

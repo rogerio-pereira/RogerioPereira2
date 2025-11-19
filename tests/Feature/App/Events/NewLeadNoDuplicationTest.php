@@ -6,12 +6,9 @@ use App\Events\NewLead;
 use App\Listeners\NewLeadEmailListener;
 use App\Listeners\NewLeadSlackListener;
 use App\Models\Contact;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
-
-uses(RefreshDatabase::class);
 
 test('new lead event triggers only one slack notification per dispatch', function () {
     Notification::fake();

@@ -7,9 +7,6 @@ use App\Models\Category;
 use App\Models\Ebook;
 use App\Models\Purchase;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 test('purchase confirmation event can be instantiated with purchase', function () {
     $category = Category::factory()->create();
