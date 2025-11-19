@@ -333,7 +333,7 @@
             <!-- Footer -->
             <div class="footer">
                 <p>&copy; 2025 Rogerio Pereira. All rights reserved.</p>
-                <p><a href="{{ route('software-development') }}">Visit Our Software Development Page</a> | <a href="#">Unsubscribe</a></p>
+                <p><a href="{{ route('software-development') }}">Visit Our Software Development Page</a> | <a href="{{ route('unsubscribe.show', $contact->id) }}">Unsubscribe</a></p>
             </div>
         </div>
     </div>

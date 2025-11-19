@@ -8,6 +8,7 @@ use App\Http\Controllers\LandingPages\HomeController;
 use App\Http\Controllers\LandingPages\MarketingController;
 use App\Http\Controllers\LandingPages\SoftwareDevelopmentController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\UnsubscribeController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -47,6 +48,13 @@ Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear
 Route::get('/checkout', [ShopController::class, 'checkout'])->name('shop.checkout');
 Route::post('/checkout/process', [ShopController::class, 'processCheckout'])->name('shop.checkout.process');
 Route::get('/shop/success/{purchase}', [ShopController::class, 'success'])->name('shop.success');
+
+// Unsubscribe routes
+Route::get('/unsubscribe/{id}', [UnsubscribeController::class, 'show'])->name('unsubscribe.show');
+Route::post('/unsubscribe/{id}/confirm', [UnsubscribeController::class, 'confirm'])->name('unsubscribe.confirm');
+Route::get('/unsubscribe/{id}/resubscribe', [UnsubscribeController::class, 'resubscribe'])->name('unsubscribe.resubscribe');
+Route::post('/unsubscribe/{id}/resubscribe/confirm', [UnsubscribeController::class, 'resubscribeConfirm'])->name('unsubscribe.resubscribe.confirm');
+Route::get('/unsubscribe/{id}/resubscribe/success', [UnsubscribeController::class, 'resubscribeSuccess'])->name('unsubscribe.resubscribe.success');
 
 // Stripe Webhook (must be excluded from CSRF)
 Route::post('/stripe/webhook', [WebhookController::class, 'handle'])
