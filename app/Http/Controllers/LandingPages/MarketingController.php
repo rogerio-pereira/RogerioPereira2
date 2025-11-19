@@ -30,7 +30,10 @@ class MarketingController extends Controller
             ]
         );
 
-        NewLead::dispatch($contact, 'automation');
+        // Dispatches NewLead event which has two listeners:
+        // - NewLeadSlackListener: sends Slack notification
+        // - NewLeadEmailListener: queues email to lead
+        NewLead::dispatch($contact, 'marketing');
 
         return redirect()->route('marketing.thank-you')
             ->with('success', 'Thank you! Check your email for the free guide.');

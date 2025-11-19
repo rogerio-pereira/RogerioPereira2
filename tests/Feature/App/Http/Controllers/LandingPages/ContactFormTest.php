@@ -38,6 +38,9 @@ test('automation form stores contact', function () {
         return $event->category === 'automation'
             && $event->contact->email === 'john@example.com';
     });
+
+    // Ensure event is dispatched only once (no duplication)
+    Event::assertDispatchedTimes(NewLead::class, 1);
 });
 
 test('automation form stores contact with phone', function () {
@@ -112,9 +115,12 @@ test('marketing form stores contact', function () {
     ]);
 
     Event::assertDispatched(NewLead::class, function ($event) {
-        return $event->category === 'automation'
+        return $event->category === 'marketing'
             && $event->contact->email === 'john@example.com';
     });
+
+    // Ensure event is dispatched only once (no duplication)
+    Event::assertDispatchedTimes(NewLead::class, 1);
 });
 
 test('marketing form stores contact with phone', function () {
@@ -175,9 +181,12 @@ test('software development form stores contact', function () {
     ]);
 
     Event::assertDispatched(NewLead::class, function ($event) {
-        return $event->category === 'automation'
+        return $event->category === 'software-development'
             && $event->contact->email === 'john@example.com';
     });
+
+    // Ensure event is dispatched only once (no duplication)
+    Event::assertDispatchedTimes(NewLead::class, 1);
 });
 
 test('software development form stores contact with phone', function () {

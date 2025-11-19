@@ -30,6 +30,9 @@ class AutomationController extends Controller
             ]
         );
 
+        // Dispatches NewLead event which has two listeners:
+        // - NewLeadSlackListener: sends Slack notification
+        // - NewLeadEmailListener: queues email to lead
         NewLead::dispatch($contact, 'automation');
 
         return redirect()->route('automation.thank-you')
