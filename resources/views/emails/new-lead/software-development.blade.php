@@ -317,8 +317,9 @@
                 <div class="cta-section">
                     <h2>Ready to Get Started?</h2>
                     <p>Tell me more about your project, and I'll provide you with a detailed assessment, technical recommendations, and a clear quote.</p>
-                    <p style="margin-bottom: 25px;">Let's schedule a call to discuss your project in detail and see how I can help bring your software idea to life.</p>
-                    <a href="{{ route('software-development') }}#hero" class="cta-button">Get a Quote for Your Project</a>
+                    <p style="margin-bottom: 25px;">Fill out our detailed project briefing form to help me understand your requirements better and provide you with a comprehensive analysis.</p>
+                    <p style="margin-bottom: 25px; color: #B4C0C6; font-size: 14px; font-style: italic;"><strong>Estimated time:</strong> The briefing form takes approximately 30-40 minutes to complete. Most questions require thoughtful answers to help us understand your project better.</p>
+                    <a href="{{ route('briefing.create') }}" class="cta-button" style="margin-bottom: 15px;">Fill Out Project Briefing</a>
                 </div>
                 
                 <p style="color: #6B8A99; font-size: 16px; margin-top: 30px; line-height: 1.8;">I'm here to help you bring your software idea to life. When you're ready, tell me about your project and I'll provide you with a detailed assessment and quote.</p>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BriefingController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Core\CategoryController;
 use App\Http\Controllers\Core\DashboardController;
@@ -27,6 +28,11 @@ Route::get('/automation/thank-you', [AutomationController::class, 'thanks'])->na
 Route::get('/software-development', [SoftwareDevelopmentController::class, 'index'])->name('software-development');
 Route::post('/software-development', [SoftwareDevelopmentController::class, 'store'])->name('software-development.store');
 Route::get('/software-development/thank-you', [SoftwareDevelopmentController::class, 'thanks'])->name('software-development.thank-you');
+
+// Briefing
+Route::get('/briefing', [BriefingController::class, 'create'])->name('briefing.create');
+Route::post('/briefing', [BriefingController::class, 'store'])->name('briefing.store');
+Route::get('/briefing/thank-you', [BriefingController::class, 'thanks'])->name('briefing.thank-you');
 
 // Marketing
 Route::get('/marketing', [MarketingController::class, 'index'])->name('marketing');

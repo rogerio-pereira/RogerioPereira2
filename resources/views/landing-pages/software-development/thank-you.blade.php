@@ -289,10 +289,13 @@
                 <div class="next-steps">
                     <h3>What Happens Next?</h3>
                     <ul>
-                        <li>I'll review your project requirements and technical needs</li>
-                        <li>You'll receive a detailed assessment with recommendations</li>
-                        <li>We'll schedule a call to discuss your project in detail</li>
-                        <li>I'll provide a clear timeline and quote for your project</li>
+                        <li><strong>Check Email for Instructions:</strong> Check your inbox (and spam folder) to receive detailed instructions about the next steps</li>
+                        <li><strong>Complete the Briefing:</strong> Fill out the detailed briefing form (estimated 30-40 minutes) to help us better understand your project. Most questions require thoughtful answers about your business and project needs</li>
+                        <li><strong>Analysis Phase:</strong> We're reviewing your project requirements, technical specifications, and business objectives</li>
+                        <li><strong>Technical Assessment:</strong> We'll evaluate the feasibility, recommend the best technology stack, and identify potential challenges</li>
+                        <li><strong>Architecture Planning:</strong> We'll design a scalable architecture that meets your current needs and future growth</li>
+                        <li><strong>Detailed Response:</strong> You'll receive a comprehensive assessment with technical recommendations, timeline estimates, and a detailed quote</li>
+                        <li><strong>Follow-up Call:</strong> We'll schedule a call to discuss your project in detail and answer any questions you may have</li>
                     </ul>
                 </div>
             </div>
