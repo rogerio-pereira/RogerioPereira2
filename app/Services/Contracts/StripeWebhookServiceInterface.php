@@ -10,10 +10,6 @@ interface StripeWebhookServiceInterface
     /**
      * Construct and verify a Stripe webhook event.
      *
-     * @param  string  $payload
-     * @param  string  $sigHeader
-     * @param  string  $webhookSecret
-     * @return Event
      *
      * @throws SignatureVerificationException
      */

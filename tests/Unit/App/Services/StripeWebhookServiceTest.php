@@ -13,7 +13,7 @@ uses(TestCase::class);
 test('constructEvent sets api key from cashier config', function () {
     Config::set('cashier.secret', 'test_secret_key_from_config');
 
-    $service = new StripeWebhookService();
+    $service = new StripeWebhookService;
 
     try {
         // This will fail with signature verification, but we can verify
@@ -34,7 +34,7 @@ test('constructEvent uses env STRIPE_SECRET when cashier config is null', functi
     $originalEnv = $_ENV['STRIPE_SECRET'] ?? null;
     $_ENV['STRIPE_SECRET'] = 'test_secret_from_env';
 
-    $service = new StripeWebhookService();
+    $service = new StripeWebhookService;
 
     try {
         $service->constructEvent('payload', 'signature', 'webhook_secret');
@@ -54,7 +54,7 @@ test('constructEvent uses env STRIPE_SECRET when cashier config is null', functi
 test('constructEvent calls Webhook constructEvent with correct parameters', function () {
     Config::set('cashier.secret', 'test_secret');
 
-    $service = new StripeWebhookService();
+    $service = new StripeWebhookService;
     $payload = 'test_payload';
     $sigHeader = 'test_signature_header';
     $webhookSecret = 'test_webhook_secret';
@@ -76,7 +76,7 @@ test('constructEvent calls Webhook constructEvent with correct parameters', func
 test('constructEvent throws SignatureVerificationException on invalid signature', function () {
     Config::set('cashier.secret', 'test_secret');
 
-    $service = new StripeWebhookService();
+    $service = new StripeWebhookService;
 
     expect(fn () => $service->constructEvent('invalid_payload', 'invalid_signature', 'test_webhook_secret'))
         ->toThrow(SignatureVerificationException::class);
@@ -92,7 +92,7 @@ test('constructEvent returns Event when signature is valid', function () {
 })->skip('Requires valid Stripe webhook signature generation');
 
 test('constructEvent implements StripeWebhookServiceInterface', function () {
-    $service = new StripeWebhookService();
+    $service = new StripeWebhookService;
 
     expect($service)->toBeInstanceOf(\App\Services\Contracts\StripeWebhookServiceInterface::class);
 });

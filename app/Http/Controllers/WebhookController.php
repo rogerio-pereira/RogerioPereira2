@@ -42,9 +42,9 @@ class WebhookController extends Controller
         }
 
         try {
-            //Dependency Injection Pattern to be easier to mock in tests
+            // Dependency Injection Pattern to be easier to mock in tests
             $event = $this->webhookService
-                        ->constructEvent($payload, $sigHeader, $webhookSecret);
+                ->constructEvent($payload, $sigHeader, $webhookSecret);
         } catch (SignatureVerificationException $e) {
             Log::error('Stripe webhook signature verification failed: '.$e->getMessage());
 
