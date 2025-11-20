@@ -3,27 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\Purchase;
+use App\Services\Contracts\StripeWebhookServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Stripe\Event;
 use Stripe\Exception\SignatureVerificationException;
-use Stripe\Stripe;
-use Stripe\Webhook;
 
 /**
  * Webhook Controller
  *
- * NOTE: This controller uses Stripe's static methods (Webhook::constructEvent)
- * which cannot be easily mocked in unit tests. The webhook signature verification
- * and event construction require real Stripe webhook payloads or would need
- * code refactoring to use dependency injection for testability.
- *
- * Current code coverage limitations:
- * - Lines 30-31: Stripe::setApiKey and Webhook::constructEvent (requires real webhook)
- * - Lines 36-40: Exception handling for webhook processing (partially covered)
- * - Lines 43-54: Event type switching and handling (partially covered)
+ * This controller uses dependency injection for Stripe webhook service,
+ * allowing for easy mocking in tests.
  */
 class WebhookController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(
+        private readonly StripeWebhookServiceInterface $webhookService
+    ) {
+        //
+    }
+
     /**
      * Handle Stripe webhook events.
      */
@@ -40,8 +42,9 @@ class WebhookController extends Controller
         }
 
         try {
-            Stripe::setApiKey(config('cashier.secret') ?: env('STRIPE_SECRET'));
-            $event = Webhook::constructEvent($payload, $sigHeader, $webhookSecret);
+            //Dependency Injection Pattern to be easier to mock in tests
+            $event = $this->webhookService
+                        ->constructEvent($payload, $sigHeader, $webhookSecret);
         } catch (SignatureVerificationException $e) {
             Log::error('Stripe webhook signature verification failed: '.$e->getMessage());
 

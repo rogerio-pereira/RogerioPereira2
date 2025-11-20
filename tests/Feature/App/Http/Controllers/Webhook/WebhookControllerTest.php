@@ -5,8 +5,11 @@ namespace Tests\Feature\App\Http\Controllers\Webhook;
 use App\Models\Category;
 use App\Models\Ebook;
 use App\Models\Purchase;
+use App\Services\Contracts\StripeWebhookServiceInterface;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use Stripe\Event;
+use Stripe\Exception\SignatureVerificationException;
 
 test('webhook returns error when secret is not configured', function () {
     $originalSecret = config('cashier.webhook.secret');
@@ -23,7 +26,16 @@ test('webhook returns error when secret is not configured', function () {
 });
 
 test('webhook returns error when signature is invalid', function () {
+    Log::spy();
+
     Config::set('cashier.webhook.secret', 'test-secret');
+
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andThrow(new SignatureVerificationException('Invalid signature', 400));
+
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
 
     $response = $this->postJson(route('stripe.webhook'), [
         'type' => 'checkout.session.completed',
@@ -34,27 +46,49 @@ test('webhook returns error when signature is invalid', function () {
     $response->assertStatus(400);
     $response->assertJson(['error' => 'Invalid signature']);
 
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with(\Mockery::pattern('/Stripe webhook signature verification failed/'));
+
     Config::set('cashier.webhook.secret', null);
 });
 
 test('webhook processes payment_intent.succeeded event', function () {
     Log::spy();
 
-    // Create Stripe PaymentIntent
+    Config::set('cashier.webhook.secret', 'test-secret');
+
     $paymentIntent = new \Stripe\PaymentIntent('pi_test_123');
+    $event = new Event('evt_test_123');
+    $reflectionEvent = new \ReflectionClass($event);
+    $eventValuesProperty = $reflectionEvent->getProperty('_values');
+    $eventValuesProperty->setAccessible(true);
+    $eventValues = $eventValuesProperty->getValue($event);
+    $eventValues['type'] = 'payment_intent.succeeded';
+    $eventValues['data'] = (object) ['object' => $paymentIntent];
+    $eventValuesProperty->setValue($event, $eventValues);
 
-    // Simulate what happens when payment_intent.succeeded event is processed
-    // Since we can't easily mock Webhook::constructEvent, we test the handler directly
-    $controller = new \App\Http\Controllers\WebhookController;
-    $reflection = new \ReflectionClass($controller);
-    $method = $reflection->getMethod('handlePaymentIntentSucceeded');
-    $method->setAccessible(true);
-    $method->invoke($controller, $paymentIntent);
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andReturn($event);
 
-    // Verify the event was logged
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
+    $response = $this->postJson(route('stripe.webhook'), [
+        'type' => 'payment_intent.succeeded',
+    ], [
+        'Stripe-Signature' => 'test-signature',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson(['received' => true]);
+
     Log::shouldHaveReceived('info')
         ->once()
         ->with('Payment intent succeeded: pi_test_123');
+
+    Config::set('cashier.webhook.secret', null);
 });
 
 test('handleCheckoutSessionCompleted updates purchase when payment is paid', function () {
@@ -87,7 +121,8 @@ test('handleCheckoutSessionCompleted updates purchase when payment is paid', fun
     $valuesProperty->setValue($session, $values);
 
     // Use reflection to call protected method
-    $controller = new \App\Http\Controllers\WebhookController;
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $controller = new \App\Http\Controllers\WebhookController($mockService);
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handleCheckoutSessionCompleted');
     $method->setAccessible(true);
@@ -132,7 +167,8 @@ test('handleCheckoutSessionCompleted does not update purchase when payment is no
     $valuesProperty->setValue($session, $values);
 
     // Use reflection to call protected method
-    $controller = new \App\Http\Controllers\WebhookController;
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $controller = new \App\Http\Controllers\WebhookController($mockService);
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handleCheckoutSessionCompleted');
     $method->setAccessible(true);
@@ -158,7 +194,8 @@ test('handleCheckoutSessionCompleted does not update when purchase does not exis
     $valuesProperty->setValue($session, $values);
 
     // Use reflection to call protected method
-    $controller = new \App\Http\Controllers\WebhookController;
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $controller = new \App\Http\Controllers\WebhookController($mockService);
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handleCheckoutSessionCompleted');
     $method->setAccessible(true);
@@ -169,27 +206,31 @@ test('handleCheckoutSessionCompleted does not update when purchase does not exis
 });
 
 test('handlePaymentIntentSucceeded logs the event', function () {
+    Log::spy();
+
     // Create Stripe PaymentIntent
     $paymentIntent = new \Stripe\PaymentIntent('pi_test_123');
 
     // Use reflection to call protected method
-    $controller = new \App\Http\Controllers\WebhookController;
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $controller = new \App\Http\Controllers\WebhookController($mockService);
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('handlePaymentIntentSucceeded');
     $method->setAccessible(true);
 
-    // The method should execute without throwing exceptions
-    // It logs the event, but we can't easily test logging without complex mocking
     $method->invoke($controller, $paymentIntent);
 
-    $this->assertTrue(true);
+    Log::shouldHaveReceived('info')
+        ->once()
+        ->with('Payment intent succeeded: pi_test_123');
 });
 
 test('webhook handles unhandled event types', function () {
     Log::spy();
 
-    // Create a mock event for an unhandled type
-    $event = new \Stripe\Event('evt_test_123');
+    Config::set('cashier.webhook.secret', 'test-secret');
+
+    $event = new Event('evt_test_123');
     $reflectionEvent = new \ReflectionClass($event);
     $eventValuesProperty = $reflectionEvent->getProperty('_values');
     $eventValuesProperty->setAccessible(true);
@@ -197,41 +238,53 @@ test('webhook handles unhandled event types', function () {
     $eventValues['type'] = 'customer.created'; // Unhandled event type
     $eventValuesProperty->setValue($event, $eventValues);
 
-    // Use reflection to simulate the switch statement behavior
-    // Since we can't easily mock Webhook::constructEvent, we'll test
-    // the default case logic directly
-    $controller = new \App\Http\Controllers\WebhookController;
-    $reflection = new \ReflectionClass($controller);
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andReturn($event);
 
-    // Simulate what happens in the switch default case
-    // The controller logs unhandled events, so we verify that behavior
-    Log::shouldReceive('info')
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
+    $response = $this->postJson(route('stripe.webhook'), [
+        'type' => 'customer.created',
+    ], [
+        'Stripe-Signature' => 'test-signature',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson(['received' => true]);
+
+    Log::shouldHaveReceived('info')
         ->once()
         ->with('Unhandled Stripe webhook event: customer.created');
 
-    // Since we can't easily test the full webhook flow without mocking
-    // the static Webhook::constructEvent method, we verify the logging
-    // behavior that would occur in the default case
-    Log::info('Unhandled Stripe webhook event: customer.created');
-
-    $this->assertTrue(true);
+    Config::set('cashier.webhook.secret', null);
 });
 
 test('webhook returns error on generic exception', function () {
+    Log::spy();
+
     Config::set('cashier.webhook.secret', 'test-secret');
 
-    // Mock a scenario that would cause a generic exception
-    // We'll use an invalid payload that might cause issues
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andThrow(new \Exception('Generic webhook error'));
+
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
     $response = $this->postJson(route('stripe.webhook'), [
         'type' => 'invalid.event',
     ], [
-        'Stripe-Signature' => 'invalid-signature',
+        'Stripe-Signature' => 'test-signature',
     ]);
 
-    // Should return 400 for invalid signature (SignatureVerificationException)
-    // or 400 for generic exception
     $response->assertStatus(400);
-    $this->assertArrayHasKey('error', $response->json());
+    $response->assertJson(['error' => 'Webhook processing failed']);
+
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with(\Mockery::pattern('/Stripe webhook error/'));
 
     Config::set('cashier.webhook.secret', null);
 });
@@ -258,11 +311,20 @@ test('webhook logs error on signature verification failure', function () {
 
     Config::set('cashier.webhook.secret', 'test-secret');
 
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andThrow(new SignatureVerificationException('Invalid signature', 400));
+
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
     $response = $this->postJson(route('stripe.webhook'), [
         'type' => 'checkout.session.completed',
     ], [
         'Stripe-Signature' => 'invalid-signature',
     ]);
+
+    $response->assertStatus(400);
 
     Log::shouldHaveReceived('error')
         ->once()
@@ -276,18 +338,24 @@ test('webhook logs error on generic exception', function () {
 
     Config::set('cashier.webhook.secret', 'test-secret');
 
-    // This will trigger a generic exception due to invalid signature
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andThrow(new \RuntimeException('Generic webhook processing error'));
+
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
     $response = $this->postJson(route('stripe.webhook'), [
         'type' => 'invalid.event',
     ], [
-        'Stripe-Signature' => 'invalid-signature',
+        'Stripe-Signature' => 'test-signature',
     ]);
 
-    // Should log error for webhook processing failure
+    $response->assertStatus(400);
+
     Log::shouldHaveReceived('error')
-        ->atLeast()
         ->once()
-        ->with(\Mockery::pattern('/Stripe webhook/'));
+        ->with(\Mockery::pattern('/Stripe webhook error/'));
 
     Config::set('cashier.webhook.secret', null);
 });
@@ -310,21 +378,6 @@ test('webhook processes checkout.session.completed event', function () {
         'status' => 'pending',
     ]);
 
-    // Create a valid Stripe event payload for checkout.session.completed
-    $eventPayload = [
-        'id' => 'evt_test_123',
-        'type' => 'checkout.session.completed',
-        'data' => [
-            'object' => [
-                'id' => 'cs_test_123',
-                'payment_status' => 'paid',
-                'payment_intent' => 'pi_test_123',
-            ],
-        ],
-    ];
-
-    // We need to create a valid signature, but since we can't easily do that,
-    // we'll test the handler method directly using reflection
     $session = new \Stripe\Checkout\Session('cs_test_123');
     $reflectionSession = new \ReflectionClass($session);
     $valuesProperty = $reflectionSession->getProperty('_values');
@@ -334,11 +387,30 @@ test('webhook processes checkout.session.completed event', function () {
     $values['payment_intent'] = 'pi_test_123';
     $valuesProperty->setValue($session, $values);
 
-    $controller = new \App\Http\Controllers\WebhookController;
-    $reflection = new \ReflectionClass($controller);
-    $method = $reflection->getMethod('handleCheckoutSessionCompleted');
-    $method->setAccessible(true);
-    $method->invoke($controller, $session);
+    $event = new Event('evt_test_123');
+    $reflectionEvent = new \ReflectionClass($event);
+    $eventValuesProperty = $reflectionEvent->getProperty('_values');
+    $eventValuesProperty->setAccessible(true);
+    $eventValues = $eventValuesProperty->getValue($event);
+    $eventValues['type'] = 'checkout.session.completed';
+    $eventValues['data'] = (object) ['object' => $session];
+    $eventValuesProperty->setValue($event, $eventValues);
+
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andReturn($event);
+
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
+    $response = $this->postJson(route('stripe.webhook'), [
+        'type' => 'checkout.session.completed',
+    ], [
+        'Stripe-Signature' => 'test-signature',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson(['received' => true]);
 
     $purchase->refresh();
     $this->assertEquals('completed', $purchase->status);
@@ -356,27 +428,26 @@ test('webhook handles generic exception and returns error', function () {
     Log::spy();
     Config::set('cashier.webhook.secret', 'test-secret');
 
-    // Test lines 36-40: catch generic Exception block
-    // The SignatureVerificationException is caught first (line 32),
-    // so to test the generic catch, we need a different approach
-    // Since Webhook::constructEvent can throw other exceptions,
-    // we'll test that the generic catch block exists and handles exceptions
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andThrow(new \RuntimeException('Generic webhook processing error'));
 
-    // The invalid signature triggers SignatureVerificationException first,
-    // but we can verify the generic catch structure exists
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
     $response = $this->postJson(route('stripe.webhook'), [
         'invalid' => 'payload',
     ], [
-        'Stripe-Signature' => 'invalid-signature',
+        'Stripe-Signature' => 'test-signature',
     ]);
 
-    // This will be caught by SignatureVerificationException (line 32)
-    // but we verify the error handling structure
     $response->assertStatus(400);
-    $this->assertArrayHasKey('error', $response->json());
+    $response->assertJson(['error' => 'Webhook processing failed']);
 
-    // The generic catch (lines 36-40) would handle other exceptions
-    // that are not SignatureVerificationException
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with(\Mockery::pattern('/Stripe webhook error/'));
+
     Config::set('cashier.webhook.secret', null);
 });
 
@@ -398,8 +469,6 @@ test('webhook processes checkout.session.completed event through switch', functi
         'status' => 'pending',
     ]);
 
-    // Test lines 43-46: switch case 'checkout.session.completed'
-    // We'll test the handler directly since we can't easily mock Webhook::constructEvent
     $session = new \Stripe\Checkout\Session('cs_test_123');
     $reflectionSession = new \ReflectionClass($session);
     $valuesProperty = $reflectionSession->getProperty('_values');
@@ -409,11 +478,30 @@ test('webhook processes checkout.session.completed event through switch', functi
     $values['payment_intent'] = 'pi_test_123';
     $valuesProperty->setValue($session, $values);
 
-    $controller = new \App\Http\Controllers\WebhookController;
-    $reflection = new \ReflectionClass($controller);
-    $method = $reflection->getMethod('handleCheckoutSessionCompleted');
-    $method->setAccessible(true);
-    $method->invoke($controller, $session);
+    $event = new Event('evt_test_123');
+    $reflectionEvent = new \ReflectionClass($event);
+    $eventValuesProperty = $reflectionEvent->getProperty('_values');
+    $eventValuesProperty->setAccessible(true);
+    $eventValues = $eventValuesProperty->getValue($event);
+    $eventValues['type'] = 'checkout.session.completed';
+    $eventValues['data'] = (object) ['object' => $session];
+    $eventValuesProperty->setValue($event, $eventValues);
+
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andReturn($event);
+
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
+    $response = $this->postJson(route('stripe.webhook'), [
+        'type' => 'checkout.session.completed',
+    ], [
+        'Stripe-Signature' => 'test-signature',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson(['received' => true]);
 
     $purchase->refresh();
     $this->assertEquals('completed', $purchase->status);
@@ -425,16 +513,32 @@ test('webhook processes payment_intent.succeeded event through switch', function
     Log::spy();
     Config::set('cashier.webhook.secret', 'test-secret');
 
-    // Test lines 48-50: switch case 'payment_intent.succeeded'
     $paymentIntent = new \Stripe\PaymentIntent('pi_test_123');
+    $event = new Event('evt_test_123');
+    $reflectionEvent = new \ReflectionClass($event);
+    $eventValuesProperty = $reflectionEvent->getProperty('_values');
+    $eventValuesProperty->setAccessible(true);
+    $eventValues = $eventValuesProperty->getValue($event);
+    $eventValues['type'] = 'payment_intent.succeeded';
+    $eventValues['data'] = (object) ['object' => $paymentIntent];
+    $eventValuesProperty->setValue($event, $eventValues);
 
-    $controller = new \App\Http\Controllers\WebhookController;
-    $reflection = new \ReflectionClass($controller);
-    $method = $reflection->getMethod('handlePaymentIntentSucceeded');
-    $method->setAccessible(true);
-    $method->invoke($controller, $paymentIntent);
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andReturn($event);
 
-    // Verify it was logged (line 49 calls handler which logs)
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
+    $response = $this->postJson(route('stripe.webhook'), [
+        'type' => 'payment_intent.succeeded',
+    ], [
+        'Stripe-Signature' => 'test-signature',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson(['received' => true]);
+
     Log::shouldHaveReceived('info')
         ->once()
         ->with('Payment intent succeeded: pi_test_123');
@@ -445,18 +549,31 @@ test('webhook processes payment_intent.succeeded event through switch', function
 test('webhook returns success response after processing event', function () {
     Config::set('cashier.webhook.secret', 'test-secret');
 
-    // Test line 56: return response()->json(['received' => true])
-    // Since we can't easily mock Webhook::constructEvent, we'll test the controller
-    // method structure and verify it would return the correct response
+    $paymentIntent = new \Stripe\PaymentIntent('pi_test_123');
+    $event = new Event('evt_test_123');
+    $reflectionEvent = new \ReflectionClass($event);
+    $eventValuesProperty = $reflectionEvent->getProperty('_values');
+    $eventValuesProperty->setAccessible(true);
+    $eventValues = $eventValuesProperty->getValue($event);
+    $eventValues['type'] = 'payment_intent.succeeded';
+    $eventValues['data'] = (object) ['object' => $paymentIntent];
+    $eventValuesProperty->setValue($event, $eventValues);
 
-    $controller = new \App\Http\Controllers\WebhookController;
-    $reflection = new \ReflectionClass($controller);
-    $method = $reflection->getMethod('handle');
+    $mockService = $this->mock(StripeWebhookServiceInterface::class);
+    $mockService->shouldReceive('constructEvent')
+        ->once()
+        ->andReturn($event);
 
-    // Verify the method exists and has correct return type
-    $this->assertTrue($method->hasReturnType());
-    $returnType = $method->getReturnType();
-    $this->assertStringContainsString('JsonResponse', (string) $returnType);
+    $this->app->instance(StripeWebhookServiceInterface::class, $mockService);
+
+    $response = $this->postJson(route('stripe.webhook'), [
+        'type' => 'payment_intent.succeeded',
+    ], [
+        'Stripe-Signature' => 'test-signature',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson(['received' => true]);
 
     Config::set('cashier.webhook.secret', null);
 });

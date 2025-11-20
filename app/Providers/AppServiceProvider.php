@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Purchase;
 use App\Observers\PurchaseObserver;
+use App\Services\Contracts\StripeWebhookServiceInterface;
+use App\Services\StripeWebhookService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,7 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Dependency Injection pattern
+        $this->app->bind(StripeWebhookServiceInterface::class, StripeWebhookService::class);
     }
 
     /**
