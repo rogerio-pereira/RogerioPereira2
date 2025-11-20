@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Core;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Contact;
+use App\Models\Ebook;
 use App\Models\Purchase;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -78,23 +78,18 @@ class DashboardController extends Controller
             }
         }
 
-        // Top 10 ebooks de todos os tempos com categoria
-        $topEbooks = Purchase::where('status', 'completed')
-            ->whereNotNull('ebook_id')
-            ->select('ebook_id', DB::raw('COUNT(*) as sales_count'))
-            ->with('ebook:id,name,category_id', 'ebook.category:id,name,color')
-            ->groupBy('ebook_id')
-            ->orderByDesc('sales_count')
+        // Top 10 ebooks de todos os tempos com categoria (usando campo downloads)
+        $topEbooks = Ebook::where('downloads', '>', 0)
+            ->with('category:id,name,color')
+            ->orderByDesc('downloads')
             ->limit(10)
             ->get()
-            ->filter(fn (\App\Models\Purchase $purchase): bool => $purchase->ebook !== null)
-            ->values()
-            ->map(function (\App\Models\Purchase $purchase): array {
+            ->map(function (Ebook $ebook): array {
                 return [
-                    'name' => $purchase->ebook->name ?? 'Unknown',
-                    'sales' => $purchase->sales_count,
-                    'categoryName' => $purchase->ebook->category->name ?? 'Unknown',
-                    'categoryColor' => $purchase->ebook->category->color ?? '#999999',
+                    'name' => $ebook->name,
+                    'sales' => $ebook->downloads,
+                    'categoryName' => $ebook->category->name ?? 'Unknown',
+                    'categoryColor' => $ebook->category->color ?? '#999999',
                 ];
             });
 

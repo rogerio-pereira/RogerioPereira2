@@ -219,23 +219,21 @@ test('dashboard calculates top 10 ebooks correctly', function () {
 
     $category = Category::factory()->create(['name' => 'Automation', 'color' => '#2CBFB3']);
 
-    // Criar ebooks com diferentes números de vendas
-    $ebook1 = Ebook::factory()->create(['category_id' => $category->id, 'name' => 'Ebook 1']);
-    $ebook2 = Ebook::factory()->create(['category_id' => $category->id, 'name' => 'Ebook 2']);
-    $ebook3 = Ebook::factory()->create(['category_id' => $category->id, 'name' => 'Ebook 3']);
-
-    // Criar vendas: ebook1 tem mais vendas
-    Purchase::factory()->count(5)->create([
-        'ebook_id' => $ebook1->id,
-        'status' => 'completed',
+    // Criar ebooks com diferentes números de downloads
+    $ebook1 = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'name' => 'Ebook 1',
+        'downloads' => 5,
     ]);
-    Purchase::factory()->count(3)->create([
-        'ebook_id' => $ebook2->id,
-        'status' => 'completed',
+    $ebook2 = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'name' => 'Ebook 2',
+        'downloads' => 3,
     ]);
-    Purchase::factory()->count(1)->create([
-        'ebook_id' => $ebook3->id,
-        'status' => 'completed',
+    $ebook3 = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'name' => 'Ebook 3',
+        'downloads' => 1,
     ]);
 
     $response = $this->get(route('dashboard'));
@@ -385,11 +383,9 @@ test('dashboard handles ebook with category that has null name in top ebooks', f
 
     // Criar categoria com nome vazio (simulando categoria sem nome)
     $category = Category::factory()->create(['name' => '', 'color' => '#2CBFB3']);
-    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
-
-    Purchase::factory()->create([
-        'ebook_id' => $ebook->id,
-        'status' => 'completed',
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'downloads' => 1,
     ]);
 
     $response = $this->get(route('dashboard'));

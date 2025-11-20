@@ -32,6 +32,7 @@ class Ebook extends Model
         'price',
         'file',
         'image',
+        'downloads',
     ];
 
     /**
@@ -43,6 +44,7 @@ class Ebook extends Model
     {
         return [
             'price' => 'decimal:2',
+            'downloads' => 'integer',
             'created_at' => 'datetime:d/m/Y H:i',
             'updated_at' => 'datetime:d/m/Y H:i',
         ];

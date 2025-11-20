@@ -37,6 +37,7 @@ class EbookTest extends ModelTestCase
             'price',
             'file',
             'image',
+            'downloads',
         ];
     }
 
@@ -49,6 +50,7 @@ class EbookTest extends ModelTestCase
     {
         return [
             'price' => 'decimal:2',
+            'downloads' => 'integer',
             'created_at' => 'datetime:d/m/Y H:i',
             'updated_at' => 'datetime:d/m/Y H:i',
         ];

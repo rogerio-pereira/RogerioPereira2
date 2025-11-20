@@ -196,6 +196,9 @@ class ShopController extends Controller
                     'status' => 'completed',
                     'completed_at' => now(),
                 ]);
+
+                // Increment download count for the ebook
+                $ebook->increment('downloads');
             }
 
             // Clear the cart
