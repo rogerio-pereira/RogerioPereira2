@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Contact extends Model
 {
@@ -62,5 +63,13 @@ class Contact extends Model
             'created_at' => 'datetime:d/m/Y H:i',
             'updated_at' => 'datetime:d/m/Y H:i',
         ];
+    }
+
+    /**
+     * Get the purchases for the contact.
+     */
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(Purchase::class, 'email', 'email');
     }
 }

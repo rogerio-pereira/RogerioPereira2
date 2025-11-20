@@ -52,4 +52,12 @@ class Purchase extends Model
     {
         return $this->belongsTo(Ebook::class);
     }
+
+    /**
+     * Get the contact that made the purchase.
+     */
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class, 'email', 'email');
+    }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature\App\Models;
 use App\Events\PurchaseConfirmation;
 use App\Mail\EbookDownloadEmail;
 use App\Models\Category;
+use App\Models\Contact;
 use App\Models\Ebook;
 use App\Models\Purchase;
 use Illuminate\Support\Facades\Event;
@@ -533,4 +534,29 @@ test('ebook download email uses fallback subject when ebook is null', function (
 
     // Should use fallback subject
     $this->assertEquals('Your Ebook Download - Your Ebook', $envelope->subject);
+});
+
+test('purchase belongs to contact relationship using email', function () {
+    $contact = Contact::factory()->create([
+        'email' => 'test@example.com',
+    ]);
+
+    $category = Category::factory()->create();
+    $ebook = Ebook::factory()->create(['category_id' => $category->id]);
+
+    $purchase = Purchase::create([
+        'name' => 'John Doe',
+        'email' => 'test@example.com',
+        'phone' => '1234567890',
+        'ebook_id' => $ebook->id,
+        'amount' => 29.99,
+        'currency' => 'usd',
+        'status' => 'completed',
+    ]);
+
+    $purchaseContact = $purchase->contact;
+
+    $this->assertNotNull($purchaseContact);
+    $this->assertEquals($contact->id, $purchaseContact->id);
+    $this->assertEquals($contact->email, $purchaseContact->email);
 });

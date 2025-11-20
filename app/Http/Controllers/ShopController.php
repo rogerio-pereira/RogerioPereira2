@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Contact;
 use App\Models\Ebook;
 use App\Models\Purchase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentIntent;
@@ -109,23 +111,57 @@ class ShopController extends Controller
                 ], 400);
             }
 
+            // Load ebooks with categories
+            $ebooks = Ebook::with('category')
+                ->whereIn('id', $cart)
+                ->get();
+
+            // Determine which category fields to set based on purchased ebooks
+            $categoryFields = [
+                'marketing' => false,
+                'automation' => false,
+                'software_development' => false,
+            ];
+
+            foreach ($ebooks as $ebook) {
+                if ($ebook->category) {
+                    $categoryName = $ebook->category->name;
+                    $categoryName = Str::slug($categoryName, '_');
+                    $categoryFields[$categoryName] = true;
+                }
+            }
+
+            // Create or update contact
+            $contact = Contact::updateOrCreate(
+                ['email' => $request->email],
+                [
+                    'name' => $request->name,
+                    'phone' => $request->phone,
+                ]
+            );
+
+            // Update buyer and category fields (merge with existing values)
+            $contact->update([
+                'buyer' => true,
+                'marketing' => $contact->marketing || $categoryFields['marketing'],
+                'automation' => $contact->automation || $categoryFields['automation'],
+                'software_development' => $contact->software_development || $categoryFields['software_development'],
+            ]);
+
             // Create purchase records for each ebook in cart
             $purchases = [];
-            foreach ($cart as $ebookId) {
-                $ebook = Ebook::find($ebookId);
-                if ($ebook) {
-                    $purchases[] = Purchase::create([
-                        'name' => $request->name,
-                        'phone' => $request->phone,
-                        'ebook_id' => $ebook->id,
-                        'stripe_payment_intent_id' => $paymentIntent->id,
-                        'email' => $request->email,
-                        'amount' => $ebook->price,
-                        'currency' => 'usd',
-                        'status' => 'completed',
-                        'completed_at' => now(),
-                    ]);
-                }
+            foreach ($ebooks as $ebook) {
+                $purchases[] = Purchase::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'ebook_id' => $ebook->id,
+                    'stripe_payment_intent_id' => $paymentIntent->id,
+                    'amount' => $ebook->price,
+                    'currency' => 'usd',
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                ]);
             }
 
             // Clear the cart
