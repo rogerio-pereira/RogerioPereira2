@@ -58,6 +58,8 @@ test('webhook processes payment_intent.succeeded event', function () {
 });
 
 test('handleCheckoutSessionCompleted updates purchase when payment is paid', function () {
+    Log::spy();
+
     $category = Category::factory()->create();
     $ebook = Ebook::factory()->create(['category_id' => $category->id]);
 
@@ -96,6 +98,11 @@ test('handleCheckoutSessionCompleted updates purchase when payment is paid', fun
     $this->assertEquals('completed', $purchase->status);
     $this->assertEquals('pi_test_123', $purchase->stripe_payment_intent_id);
     $this->assertNotNull($purchase->completed_at);
+
+    // Verify Log::info was called (line 74)
+    Log::shouldHaveReceived('info')
+        ->once()
+        ->with(\Mockery::pattern('/Purchase completed:/'));
 });
 
 test('handleCheckoutSessionCompleted does not update purchase when payment is not paid', function () {

@@ -348,7 +348,7 @@
                     <h2>Want to Go Deeper?</h2>
                     <p>If you want to see how these strategies work together in complete automation systems, I've created detailed ebooks that show you step-by-step workflows, tool recommendations, and real-world examples.</p>
                     <p style="margin-bottom: 25px;">Each ebook covers one area in depth, with complete implementation guides you can follow.</p>
-                    <a href="{{ route('shop.index') }}" class="cta-button">Explore Automation Ebooks</a>
+                    <a href="{{ route('shop.index', ['category' => 'automation']) }}" class="cta-button">Explore Automation Ebooks</a>
                 </div>
                 
                 <p style="color: #496773; font-size: 16px; margin-top: 30px; line-height: 1.8;">Your time is your most valuable asset. Let's get it back.</p>

@@ -41,7 +41,7 @@ Route::post('/marketing', [MarketingController::class, 'store'])->name('marketin
 Route::get('/marketing/thank-you', [MarketingController::class, 'thanks'])->name('marketing.thank-you');
 
 // Shop - Public routes for buying ebooks
-Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/shop/{category?}', [ShopController::class, 'index'])->name('shop.index');
 
 // Ebook download route (public, requires confirmation hash)
 Route::get('/ebooks/{ebook}/download/{confirmation?}', [ShopController::class, 'downloadEbook'])->name('ebooks.download');

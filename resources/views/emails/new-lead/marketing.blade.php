@@ -353,7 +353,7 @@
                     <h2>Want Complete Implementation Guides?</h2>
                     <p>If you want to see how these strategies work together in complete marketing systems, I've created detailed ebooks with step-by-step implementation guides, templates, and real-world examples.</p>
                     <p style="margin-bottom: 25px;">Each ebook covers one marketing area in depth, showing you exactly how to implement these strategies in your business.</p>
-                    <a href="{{ route('shop.index') }}" class="cta-button">Explore Marketing Ebooks</a>
+                    <a href="{{ route('shop.index', ['category' => 'marketing']) }}" class="cta-button">Explore Marketing Ebooks</a>
                 </div>
                 
                 <p style="color: #6B8A99; font-size: 16px; margin-top: 30px; line-height: 1.8;">You don't need a bigger budget. You need a better strategy.</p>

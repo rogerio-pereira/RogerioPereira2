@@ -219,6 +219,43 @@
                 <p style="color: var(--text-secondary);">Digital knowledge to boost your business</p>
             </div>
 
+            @if($categories->count() > 0)
+                <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 40px; flex-wrap: wrap;">
+                    <a 
+                        href="{{ route('shop.index') }}" 
+                        style="
+                            padding: 10px 20px;
+                            border-radius: 8px;
+                            text-decoration: none;
+                            font-weight: 600;
+                            transition: all 0.3s ease;
+                            {{ !$category ? 'background: var(--bg-tertiary); color: #ffffff;' : 'background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--bg-tertiary);' }}
+                        "
+                    >
+                        All
+                    </a>
+                    @foreach($categories as $cat)
+                        @php
+                            $categorySlug = \Illuminate\Support\Str::slug($cat->name);
+                            $isActive = $category === $categorySlug;
+                        @endphp
+                        <a 
+                            href="{{ route('shop.index', ['category' => $categorySlug]) }}" 
+                            style="
+                                padding: 10px 20px;
+                                border-radius: 8px;
+                                text-decoration: none;
+                                font-weight: 600;
+                                transition: all 0.3s ease;
+                                {{ $isActive ? 'background: ' . ($cat->color ?? '#7D49CC') . '; color: #ffffff;' : 'background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--bg-tertiary);' }}
+                            "
+                        >
+                            {{ $cat->name }}
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+
             @if($ebooks->count() > 0)
                 <div class="ebooks-grid">
                     @foreach($ebooks as $ebook)

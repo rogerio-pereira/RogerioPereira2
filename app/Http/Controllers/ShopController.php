@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Contact;
 use App\Models\Ebook;
 use App\Models\Purchase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,19 +18,51 @@ use Stripe\PaymentIntent;
 use Stripe\Stripe;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * Shop Controller
+ *
+ * NOTE: This controller uses Stripe's static methods (PaymentIntent::create, PaymentIntent::retrieve)
+ * which cannot be easily mocked in unit tests. The lines that depend on Stripe API calls
+ * (particularly in processCheckout method, lines 128-194) require real Stripe integration
+ * or would need code refactoring to use dependency injection for testability.
+ *
+ * Current code coverage limitations:
+ * - Lines 92-94: Catch block for PaymentIntent creation (covered)
+ * - Lines 128-194: Successful payment processing flow (requires real Stripe PaymentIntent)
+ * - Lines 196-202: Catch block for payment processing errors (covered)
+ */
 class ShopController extends Controller
 {
     /**
      * Display the shop page with all ebooks.
      */
-    public function index(): View
+    public function index(?string $category = null): View
     {
-        $ebooks = Ebook::with('category')
-            ->whereNotNull('file')
-            ->orderBy('created_at', 'desc')
+        $query = Ebook::with('category')
+            ->whereNotNull('file');
+
+        if ($category) {
+            $categoryModel = Category::all()
+                ->first(function (Category $cat) use ($category): bool {
+                    return Str::slug($cat->name) === $category;
+                });
+
+            if ($categoryModel) {
+                $query->where('category_id', $categoryModel->id);
+            }
+        }
+
+        $ebooks = $query->orderBy('created_at', 'desc')
             ->get();
 
-        return view('shop.index', compact('ebooks'));
+        $categories = Category::has('ebooks')
+            ->whereHas('ebooks', function (Builder $query): void {
+                $query->whereNotNull('file');
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('shop.index', compact('ebooks', 'categories', 'category'));
     }
 
     /**
