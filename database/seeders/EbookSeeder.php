@@ -13,8 +13,7 @@ class EbookSeeder extends Seeder
     public function run(): void
     {
         // Create 10 ebooks with random categories (IDs 1-3)
-        Ebook::factory()
-            ->count(10)
+        Ebook::factory(10)
             ->create();
     }
 }
