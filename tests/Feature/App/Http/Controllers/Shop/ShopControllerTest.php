@@ -1112,8 +1112,8 @@ test('processCheckout increments ebook downloads count', function () {
 
     Session::put('cart', [$ebook->id]);
 
-    // Simulate the checkout process by manually creating purchase and incrementing downloads
-    // This tests the logic that happens in processCheckout (line 201)
+    // Simulate the checkout process by creating purchase
+    // The PurchaseObserver will automatically increment downloads when Purchase is created
     $purchase = Purchase::create([
         'name' => 'Test Buyer',
         'email' => 'test@example.com',
@@ -1126,9 +1126,7 @@ test('processCheckout increments ebook downloads count', function () {
         'completed_at' => now(),
     ]);
 
-    // Increment download count (line 201)
-    $ebook->increment('downloads');
-
+    // Verify that PurchaseObserver incremented downloads automatically
     $ebook->refresh();
 
     $this->assertEquals(1, $ebook->downloads);

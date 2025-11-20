@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             $this->call([
                 EbookSeeder::class,
                 LeadSeeder::class,
-                SalesSeeder::class,
+                PurchaseSeeder::class,
                 BriefingSeeder::class,
             ]);
         }

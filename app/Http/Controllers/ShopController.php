@@ -184,6 +184,8 @@ class ShopController extends Controller
             ]);
 
             // Create purchase records for each ebook in cart
+            // Note: Purchase::create() will trigger PurchaseObserver::created()
+            // which automatically increments the ebook's download count
             $purchases = [];
             foreach ($ebooks as $ebook) {
                 $purchases[] = Purchase::create([
@@ -197,9 +199,6 @@ class ShopController extends Controller
                     'status' => 'completed',
                     'completed_at' => now(),
                 ]);
-
-                // Increment download count for the ebook
-                $ebook->increment('downloads');
             }
 
             // Clear the cart

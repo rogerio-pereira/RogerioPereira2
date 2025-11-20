@@ -28,6 +28,11 @@ class PurchaseObserver
      */
     public function created(Purchase $purchase): void
     {
+        // Increment download count for the ebook
+        if ($purchase->ebook_id && $purchase->ebook) {
+            $purchase->ebook->increment('downloads');
+        }
+
         // Generate confirmation hash if status is already completed
         if ($purchase->status === 'completed' && ! $purchase->confirmation_hash) {
             $purchase->confirmation_hash = $this->generateConfirmationHash($purchase);

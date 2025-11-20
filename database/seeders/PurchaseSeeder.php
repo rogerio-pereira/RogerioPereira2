@@ -6,7 +6,7 @@ use App\Models\Ebook;
 use App\Models\Purchase;
 use Illuminate\Database\Seeder;
 
-class SalesSeeder extends Seeder
+class PurchaseSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -24,6 +24,13 @@ class SalesSeeder extends Seeder
             return;
         }
 
+        /* Disable events to prevent PurchaseObserver from executing during seeding.
+         * This avoids:
+         *      - Sending emails (PurchaseEmailListener)
+         *      - Sending Slack notifications (PurchaseSlackListener)
+         *      - Generating confirmation hashes unnecessarily
+         * We'll manually increment download counts after creating purchases.
+         */
         Purchase::withoutEvents(function () use ($ebooks, $count) {
             for ($i = 0; $i < $count; $i++) {
                 $ebook = $ebooks->random();
@@ -39,6 +46,9 @@ class SalesSeeder extends Seeder
                     'completed_at' => fake()->dateTimeBetween('-30 days', 'now'),
                     'created_at' => fake()->dateTimeBetween('-30 days', 'now'),
                 ]);
+
+                // Increment download count to simulate PurchaseObserver behavior
+                $ebook->increment('downloads');
             }
         });
     }
