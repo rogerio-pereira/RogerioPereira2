@@ -19,6 +19,9 @@
                     <flux:navlist.item icon="folder" :href="route('core.categories.index')" :current="request()->routeIs('core.categories.*')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
                     <flux:navlist.item icon="book-open-text" :href="route('core.ebooks.index')" :current="request()->routeIs('core.ebooks.*')" wire:navigate>{{ __('Ebooks') }}</flux:navlist.item>
                 </flux:navlist.group>
+                <flux:navlist.group :heading="__('Services')" class="grid">
+                    <flux:navlist.item icon="document-text" :href="route('core.briefings.index')" :current="request()->routeIs('core.briefings.*')" wire:navigate>{{ __('Briefings') }}</flux:navlist.item>
+                </flux:navlist.group>
             </flux:navlist>
 
             <flux:spacer />

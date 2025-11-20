@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
                 EbookSeeder::class,
                 LeadSeeder::class,
                 SalesSeeder::class,
+                BriefingSeeder::class,
             ]);
         }
     }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BriefingController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\Core\BriefingController as CoreBriefingController;
 use App\Http\Controllers\Core\CategoryController;
 use App\Http\Controllers\Core\DashboardController;
 use App\Http\Controllers\Core\EbookController;
@@ -96,5 +97,10 @@ Route::middleware(['auth'])
         // Ebooks
         Route::resource('ebooks', EbookController::class)->names('core.ebooks');
         Route::get('ebooks/{ebook}/download', [EbookController::class, 'download'])->name('core.ebooks.download');
+
+        // Briefings
+        Route::get('briefings', [CoreBriefingController::class, 'index'])->name('core.briefings.index');
+        Route::get('briefings/{briefing}', [CoreBriefingController::class, 'show'])->name('core.briefings.show');
+        Route::patch('briefings/{briefing}/mark-as-done', [CoreBriefingController::class, 'markAsDone'])->name('core.briefings.mark-as-done');
 
     });

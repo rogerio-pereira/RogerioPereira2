@@ -372,11 +372,11 @@
                         <label for="team_size">How many people work in your business today? *</label>
                         <select id="team_size" name="briefing[business_info][team_size]" required>
                             <option value="">Select option...</option>
-                            <option value="just-me">Just me</option>
-                            <option value="2-5">2-5 people</option>
-                            <option value="6-10">6-10 people</option>
-                            <option value="11-20">11-20 people</option>
-                            <option value="more-than-20">More than 20 people</option>
+                            <option value="Just me">Just me</option>
+                            <option value="2-5 people">2-5 people</option>
+                            <option value="6-10 people">6-10 people</option>
+                            <option value="11-20 people">11-20 people</option>
+                            <option value="More than 20 people">More than 20 people</option>
                         </select>
                     </div>
                     
@@ -384,10 +384,10 @@
                         <label for="current_operation">How would you describe your current operation? *</label>
                         <select id="current_operation" name="briefing[business_info][current_operation]" required>
                             <option value="">Select option...</option>
-                            <option value="fully-manual">Fully manual</option>
-                            <option value="partially-digital">Partially digital</option>
-                            <option value="uses-software-needs-improvement">I already use software, but need to improve</option>
-                            <option value="fully-digital">Fully digital</option>
+                            <option value="Fully manual">Fully manual</option>
+                            <option value="Partially digital">Partially digital</option>
+                            <option value="I already use software, but need to improve">I already use software, but need to improve</option>
+                            <option value="Fully digital">Fully digital</option>
                         </select>
                     </div>
                 </div>
@@ -415,23 +415,23 @@
                         <label for="problem_impact">Does this problem cause losses? *</label>
                         <div class="checkbox-group">
                             <label>
-                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="financial">
+                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="Financial losses">
                                 Financial losses
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="wasted-time">
+                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="Wasted time">
                                 Wasted time
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="manual-errors">
+                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="Manual errors">
                                 Manual errors
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="lack-of-organization">
+                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="Lack of organization">
                                 Lack of organization
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="other">
+                                <input type="checkbox" name="briefing[problem][problem_impact][]" value="Other">
                                 Other
                             </label>
                         </div>
@@ -461,35 +461,35 @@
                         <label for="integrations">Should the system integrate with anything? *</label>
                         <div class="checkbox-group">
                             <label>
-                                <input type="checkbox" name="briefing[project][integrations][]" value="whatsapp">
+                                <input type="checkbox" name="briefing[project][integrations][]" value="WhatsApp">
                                 WhatsApp
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[project][integrations][]" value="online-payments">
+                                <input type="checkbox" name="briefing[project][integrations][]" value="Online payments">
                                 Online payments
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[project][integrations][]" value="google-calendar">
+                                <input type="checkbox" name="briefing[project][integrations][]" value="Google Calendar">
                                 Google Calendar
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[project][integrations][]" value="internal-systems">
+                                <input type="checkbox" name="briefing[project][integrations][]" value="Internal systems">
                                 Internal systems
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[project][integrations][]" value="spreadsheets">
+                                <input type="checkbox" name="briefing[project][integrations][]" value="Spreadsheets">
                                 Spreadsheets
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[project][integrations][]" value="external-api">
+                                <input type="checkbox" name="briefing[project][integrations][]" value="External API">
                                 External API
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[project][integrations][]" value="not-sure-need-help">
+                                <input type="checkbox" name="briefing[project][integrations][]" value="I don't know / I need help">
                                 I don't know / I need help
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[project][integrations][]" value="other">
+                                <input type="checkbox" name="briefing[project][integrations][]" value="Other">
                                 Other
                             </label>
                         </div>
@@ -510,10 +510,10 @@
                         <p class="help-text">This allows me to think on minimal features to match your budget</p>
                         <select id="budget_reserved" name="briefing[timeline_budget][budget_reserved]" required>
                             <option value="">Select option...</option>
-                            <option value="yes-amount">Yes → I have an amount</option>
-                            <option value="yes-range">I have a budget range</option>
-                            <option value="researching">I'm researching</option>
-                            <option value="just-curious">Just curious</option>
+                            <option value="Yes → I have an amount">Yes → I have an amount</option>
+                            <option value="I have a budget range">I have a budget range</option>
+                            <option value="I'm researching">I'm researching</option>
+                            <option value="Just curious">Just curious</option>
                         </select>
                     </div>
                     
@@ -526,9 +526,9 @@
                         <label for="urgency">What is the urgency of the project? *</label>
                         <select id="urgency" name="briefing[timeline_budget][urgency]" required>
                             <option value="">Select option...</option>
-                            <option value="this-month">I want to start this month</option>
-                            <option value="next-quarter">Next quarter</option>
-                            <option value="no-deadline">No defined deadline</option>
+                            <option value="I want to start this month">I want to start this month</option>
+                            <option value="Next quarter">Next quarter</option>
+                            <option value="No defined deadline">No defined deadline</option>
                         </select>
                     </div>
                     
@@ -541,9 +541,9 @@
                         <label for="can_participate">Can you actively participate in the development? (answering questions, approving screens, etc.) *</label>
                         <select id="can_participate" name="briefing[timeline_budget][can_participate]" required>
                             <option value="">Select option...</option>
-                            <option value="yes-daily">Yes, daily</option>
-                            <option value="yes-few-times-week">Yes, a few times per week</option>
-                            <option value="difficult-to-follow">Difficult to follow</option>
+                            <option value="Yes, daily">Yes, daily</option>
+                            <option value="Yes, a few times per week">Yes, a few times per week</option>
+                            <option value="Difficult to follow">Difficult to follow</option>
                         </select>
                     </div>
                     
@@ -551,9 +551,9 @@
                         <label for="prefer_meetings">Do you prefer meetings during development? *</label>
                         <select id="prefer_meetings" name="briefing[timeline_budget][prefer_meetings]" required>
                             <option value="">Select option...</option>
-                            <option value="yes-periodic">Yes, periodic meetings</option>
-                            <option value="only-when-needed">Only when necessary</option>
-                            <option value="no-meetings">I don't need meetings</option>
+                            <option value="Yes, periodic meetings">Yes, periodic meetings</option>
+                            <option value="Only when necessary">Only when necessary</option>
+                            <option value="I don't need meetings">I don't need meetings</option>
                         </select>
                     </div>
                 </div>
@@ -566,27 +566,27 @@
                         <label for="existing_materials">Do you already have: *</label>
                         <div class="checkbox-group">
                             <label>
-                                <input type="checkbox" name="briefing[materials][logo]" value="1">
+                                <input type="checkbox" name="briefing[materials][logo]" value="Yes">
                                 Logo
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[materials][visual_identity]" value="1">
+                                <input type="checkbox" name="briefing[materials][visual_identity]" value="Yes">
                                 Visual Identity
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[materials][domain]" value="1">
+                                <input type="checkbox" name="briefing[materials][domain]" value="Yes">
                                 Domain
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[materials][hosting]" value="1">
+                                <input type="checkbox" name="briefing[materials][hosting]" value="Yes">
                                 Hosting
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[materials][texts_images]" value="1">
+                                <input type="checkbox" name="briefing[materials][texts_images]" value="Yes">
                                 Texts and Images
                             </label>
                             <label>
-                                <input type="checkbox" name="briefing[materials][none]" value="1">
+                                <input type="checkbox" name="briefing[materials][none]" value="Yes">
                                 None of these
                             </label>
                         </div>
@@ -601,10 +601,10 @@
                         <label for="account_access">Do you have access to the necessary accounts? (email, social media, tools, APIs, etc.)</label>
                         <select id="account_access" name="briefing[materials][account_access]">
                             <option value="">Select option...</option>
-                            <option value="yes-all">Yes, I have access to everything</option>
-                            <option value="yes-some">Yes, I have access to some</option>
-                            <option value="no">No, I don't have access</option>
-                            <option value="not-sure">Not sure</option>
+                            <option value="Yes, I have access to everything">Yes, I have access to everything</option>
+                            <option value="Yes, I have access to some">Yes, I have access to some</option>
+                            <option value="No, I don't have access">No, I don't have access</option>
+                            <option value="Not sure">Not sure</option>
                         </select>
                     </div>
                     
@@ -622,10 +622,10 @@
                         <label for="preferred_contact_method">Preferred method of contact?</label>
                         <select id="preferred_contact_method" name="briefing[contact_info][preferred_contact_method]">
                             <option value="">Select option...</option>
-                            <option value="email">Email</option>
-                            <option value="phone">Phone</option>
-                            <option value="whatsapp">WhatsApp</option>
-                            <option value="either">Either</option>
+                            <option value="Email">Email</option>
+                            <option value="Phone">Phone</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Either">Either</option>
                         </select>
                     </div>
                     
@@ -633,10 +633,10 @@
                         <label for="planning_to_hire">Are you planning to hire a developer in the coming weeks? *</label>
                         <select id="planning_to_hire" name="briefing[contact_info][planning_to_hire]" required>
                             <option value="">Select option...</option>
-                            <option value="yes">Yes</option>
-                            <option value="probably">Probably</option>
-                            <option value="maybe">Maybe</option>
-                            <option value="no">No</option>
+                            <option value="Yes">Yes</option>
+                            <option value="Probably">Probably</option>
+                            <option value="Maybe">Maybe</option>
+                            <option value="No">No</option>
                         </select>
                     </div>
                     
@@ -669,7 +669,7 @@
         // Show/hide budget amount field based on selection
         document.getElementById('budget_reserved')?.addEventListener('change', function() {
             const budgetAmountGroup = document.getElementById('budget_amount_group');
-            if (this.value === 'yes-amount' || this.value === 'yes-range') {
+            if (this.value === 'Yes → I have an amount' || this.value === 'I have a budget range') {
                 budgetAmountGroup.style.display = 'block';
             } else {
                 budgetAmountGroup.style.display = 'none';
