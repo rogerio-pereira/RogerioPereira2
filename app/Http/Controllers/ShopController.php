@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Contact;
 use App\Models\Ebook;
 use App\Models\Purchase;
+use App\Services\Contracts\StripePaymentIntentServiceInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,25 +15,25 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Stripe\Exception\ApiErrorException;
-use Stripe\PaymentIntent;
-use Stripe\Stripe;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Shop Controller
  *
- * NOTE: This controller uses Stripe's static methods (PaymentIntent::create, PaymentIntent::retrieve)
- * which cannot be easily mocked in unit tests. The lines that depend on Stripe API calls
- * (particularly in processCheckout method, lines 128-194) require real Stripe integration
- * or would need code refactoring to use dependency injection for testability.
- *
- * Current code coverage limitations:
- * - Lines 92-94: Catch block for PaymentIntent creation (covered)
- * - Lines 128-194: Successful payment processing flow (requires real Stripe PaymentIntent)
- * - Lines 196-202: Catch block for payment processing errors (covered)
+ * This controller uses dependency injection for Stripe PaymentIntent service,
+ * allowing for easy mocking in tests.
  */
 class ShopController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(
+        private readonly StripePaymentIntentServiceInterface $paymentIntentService
+    ) {
+        //
+    }
+
     /**
      * Display the shop page with all ebooks.
      */
@@ -89,11 +90,11 @@ class ShopController extends Controller
         }
 
         // Set Stripe API key
-        Stripe::setApiKey(config('cashier.secret') ?: env('STRIPE_SECRET'));
+        $this->paymentIntentService->setApiKey(config('cashier.secret') ?: env('STRIPE_SECRET'));
 
         // Create PaymentIntent for the total amount
         try {
-            $paymentIntent = PaymentIntent::create([
+            $paymentIntent = $this->paymentIntentService->create([
                 'amount' => (int) ($total * 100), // Convert to cents
                 'currency' => 'usd',
                 'metadata' => [
@@ -132,10 +133,10 @@ class ShopController extends Controller
         }
 
         try {
-            Stripe::setApiKey(config('cashier.secret') ?: env('STRIPE_SECRET'));
+            $this->paymentIntentService->setApiKey(config('cashier.secret') ?: env('STRIPE_SECRET'));
 
             // Retrieve the PaymentIntent
-            $paymentIntent = PaymentIntent::retrieve($request->payment_intent_id);
+            $paymentIntent = $this->paymentIntentService->retrieve($request->payment_intent_id);
 
             // Check if payment was successful
             if ($paymentIntent->status !== 'succeeded') {

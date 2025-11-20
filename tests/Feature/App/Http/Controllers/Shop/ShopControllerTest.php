@@ -6,11 +6,13 @@ use App\Models\Category;
 use App\Models\Contact;
 use App\Models\Ebook;
 use App\Models\Purchase;
+use App\Services\Contracts\StripePaymentIntentServiceInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
+use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
-use Stripe\Stripe;
 
 test('shop index displays all ebooks with files', function () {
     $category = Category::factory()->create();
@@ -73,7 +75,8 @@ test('checkout redirects to cart when cart is empty', function () {
     // Test lines 36-38: redirect when cart is empty
     // Note: The controller method has return type View but redirects when cart is empty
     // We test the behavior by calling the method directly with reflection
-    $controller = new \App\Http\Controllers\ShopController;
+    $mockService = $this->mock(StripePaymentIntentServiceInterface::class);
+    $controller = new \App\Http\Controllers\ShopController($mockService);
     $reflection = new \ReflectionClass($controller);
     $method = $reflection->getMethod('checkout');
 
@@ -438,7 +441,7 @@ test('checkout filters out ebooks that no longer exist in cart', function () {
 });
 
 test('checkout handles PaymentIntent creation exception', function () {
-    \Illuminate\Support\Facades\Log::spy();
+    Log::spy();
 
     $category = Category::factory()->create();
     $ebook = Ebook::factory()->create([
@@ -449,30 +452,28 @@ test('checkout handles PaymentIntent creation exception', function () {
 
     Session::put('cart', [$ebook->id]);
 
-    // Test lines 66-68: catch block when PaymentIntent::create() throws ApiErrorException
-    // We'll test by calling the controller method directly and simulating the exception
-    $controller = new \App\Http\Controllers\ShopController;
-    $reflection = new \ReflectionClass($controller);
-    $method = $reflection->getMethod('checkout');
+    $mockService = $this->mock(StripePaymentIntentServiceInterface::class);
+    $mockService->shouldReceive('setApiKey')
+        ->once();
+    $mockService->shouldReceive('create')
+        ->once()
+        ->andThrow(new InvalidRequestException('Stripe API error', 400));
 
-    // Set invalid Stripe key to potentially trigger exception
-    \Stripe\Stripe::setApiKey('sk_test_invalid_key_that_will_fail');
+    $this->app->instance(StripePaymentIntentServiceInterface::class, $mockService);
 
-    try {
-        $result = $method->invoke($controller);
-        // If it succeeds, verify the view has clientSecret (may be null on exception)
-        $data = $result->getData();
-        $this->assertArrayHasKey('clientSecret', $data);
-    } catch (\Stripe\Exception\ApiErrorException $e) {
-        // Exception is expected - verify it was logged (line 67)
-        \Illuminate\Support\Facades\Log::shouldHaveReceived('error')
-            ->atLeast()
-            ->once()
-            ->with(\Mockery::pattern('/Stripe PaymentIntent creation error/'));
-    }
+    $response = $this->get(route('shop.checkout'));
+
+    $response->assertStatus(200);
+    $response->assertViewHas('clientSecret', null);
+
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with(\Mockery::pattern('/Stripe PaymentIntent creation error/'));
 });
 
 test('processCheckout handles Stripe ApiErrorException on retrieve', function () {
+    Log::spy();
+
     $category = Category::factory()->create();
     $ebook = Ebook::factory()->create([
         'category_id' => $category->id,
@@ -482,9 +483,15 @@ test('processCheckout handles Stripe ApiErrorException on retrieve', function ()
 
     Session::put('cart', [$ebook->id]);
 
-    // Use an invalid payment intent ID that will fail when retrieved
-    // This tests the catch block (lines 136-142)
-    \Stripe\Stripe::setApiKey('sk_test_invalid');
+    $mockService = $this->mock(StripePaymentIntentServiceInterface::class);
+    $mockService->shouldReceive('setApiKey')
+        ->once();
+    $mockService->shouldReceive('retrieve')
+        ->once()
+        ->with('pi_invalid_123')
+        ->andThrow(new InvalidRequestException('Stripe API error', 400));
+
+    $this->app->instance(StripePaymentIntentServiceInterface::class, $mockService);
 
     $response = $this->postJson(route('shop.checkout.process'), [
         'name' => 'John Doe',
@@ -493,12 +500,15 @@ test('processCheckout handles Stripe ApiErrorException on retrieve', function ()
         'payment_intent_id' => 'pi_invalid_123',
     ]);
 
-    // Should return error due to Stripe API failure (lines 139-142)
     $response->assertStatus(500);
     $response->assertJson([
         'success' => false,
         'error' => 'Payment processing failed. Please try again.',
     ]);
+
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with(\Mockery::pattern('/Stripe payment error/'));
 });
 
 test('processCheckout returns error when payment status is not succeeded', function () {
@@ -511,18 +521,8 @@ test('processCheckout returns error when payment status is not succeeded', funct
 
     Session::put('cart', [$ebook->id]);
 
-    // Test lines 102-106: payment status check
-    // We'll test by calling the controller method directly with a mock PaymentIntent
-    $controller = new \App\Http\Controllers\ShopController;
-    $request = \Illuminate\Http\Request::create('/shop/checkout/process', 'POST', [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'phone' => '1234567890',
-        'payment_intent_id' => 'pi_test_123',
-    ]);
-
     // Create a PaymentIntent with status != 'succeeded'
-    $paymentIntent = new \Stripe\PaymentIntent('pi_test_123');
+    $paymentIntent = new PaymentIntent('pi_test_123');
     $reflection = new \ReflectionClass($paymentIntent);
     $valuesProperty = $reflection->getProperty('_values');
     $valuesProperty->setAccessible(true);
@@ -531,16 +531,28 @@ test('processCheckout returns error when payment status is not succeeded', funct
     $values['id'] = 'pi_test_123';
     $valuesProperty->setValue($paymentIntent, $values);
 
-    // Mock PaymentIntent::retrieve using a closure that returns our mock
-    // Since we can't easily mock static methods, we'll test the controller logic
-    // by directly calling processCheckout and mocking the Stripe call
+    $mockService = $this->mock(StripePaymentIntentServiceInterface::class);
+    $mockService->shouldReceive('setApiKey')
+        ->once();
+    $mockService->shouldReceive('retrieve')
+        ->once()
+        ->with('pi_test_123')
+        ->andReturn($paymentIntent);
 
-    // For now, test that the validation logic exists
-    $reflectionController = new \ReflectionClass($controller);
-    $method = $reflectionController->getMethod('processCheckout');
+    $this->app->instance(StripePaymentIntentServiceInterface::class, $mockService);
 
-    // The actual test would require mocking Stripe, but we verify the structure
-    $this->assertTrue(method_exists($controller, 'processCheckout'));
+    $response = $this->postJson(route('shop.checkout.process'), [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'phone' => '1234567890',
+        'payment_intent_id' => 'pi_test_123',
+    ]);
+
+    $response->assertStatus(400);
+    $response->assertJson([
+        'success' => false,
+        'error' => 'Payment was not successful. Please try again.',
+    ]);
 });
 
 test('processCheckout successfully creates purchases and clears cart', function () {
@@ -560,18 +572,8 @@ test('processCheckout successfully creates purchases and clears cart', function 
 
     Session::put('cart', [$ebook1->id, $ebook2->id]);
 
-    // Test lines 111-135: successful purchase creation and cart clearing
-    // We'll test the controller logic directly using reflection
-    $controller = new \App\Http\Controllers\ShopController;
-    $request = \Illuminate\Http\Request::create('/shop/checkout/process', 'POST', [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'phone' => '1234567890',
-        'payment_intent_id' => 'pi_test_123',
-    ]);
-
     // Create a PaymentIntent with succeeded status
-    $paymentIntent = new \Stripe\PaymentIntent('pi_test_123');
+    $paymentIntent = new PaymentIntent('pi_test_123');
     $reflection = new \ReflectionClass($paymentIntent);
     $valuesProperty = $reflection->getProperty('_values');
     $valuesProperty->setAccessible(true);
@@ -580,61 +582,67 @@ test('processCheckout successfully creates purchases and clears cart', function 
     $values['id'] = 'pi_test_123';
     $valuesProperty->setValue($paymentIntent, $values);
 
-    // Since we can't easily mock PaymentIntent::retrieve, we'll test the logic
-    // by manually executing the purchase creation part (lines 114-124)
-    $purchases = [];
-    foreach (session('cart') as $ebookId) {
-        $ebook = \App\Models\Ebook::find($ebookId);
-        if ($ebook) {
-            $purchases[] = \App\Models\Purchase::create([
-                'name' => $request->name,
-                'phone' => $request->phone,
-                'ebook_id' => $ebook->id,
-                'stripe_payment_intent_id' => $paymentIntent->id,
-                'email' => $request->email,
-                'amount' => $ebook->price,
-                'currency' => 'usd',
-                'status' => 'completed',
-                'completed_at' => now(),
-            ]);
+    $mockService = $this->mock(StripePaymentIntentServiceInterface::class);
+    $mockService->shouldReceive('setApiKey')
+        ->once();
+    $mockService->shouldReceive('retrieve')
+        ->once()
+        ->with('pi_test_123')
+        ->andReturn($paymentIntent);
 
-            // Increment download count (line 201)
-            $ebook->increment('downloads');
-        }
-    }
+    $this->app->instance(StripePaymentIntentServiceInterface::class, $mockService);
 
-    // Verify purchases were created (lines 114-124)
-    $this->assertCount(2, $purchases);
+    $response = $this->postJson(route('shop.checkout.process'), [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'phone' => '1234567890',
+        'payment_intent_id' => 'pi_test_123',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson([
+        'success' => true,
+    ]);
+    $response->assertJsonStructure([
+        'success',
+        'redirect_url',
+    ]);
+
+    // Verify purchases were created
     $this->assertDatabaseHas('purchases', [
         'ebook_id' => $ebook1->id,
         'stripe_payment_intent_id' => 'pi_test_123',
         'status' => 'completed',
+        'email' => 'john@example.com',
     ]);
     $this->assertDatabaseHas('purchases', [
         'ebook_id' => $ebook2->id,
         'stripe_payment_intent_id' => 'pi_test_123',
         'status' => 'completed',
+        'email' => 'john@example.com',
     ]);
 
-    // Verify downloads were incremented (line 201)
+    // Verify downloads were incremented
     $ebook1->refresh();
     $ebook2->refresh();
     $this->assertEquals(1, $ebook1->downloads);
     $this->assertEquals(1, $ebook2->downloads);
 
-    // Test cart clearing (line 129)
-    session()->forget('cart');
+    // Verify cart was cleared
     $this->assertEmpty(session('cart'));
 
-    // Test redirect URL generation (lines 132-135)
-    $redirectUrl = route('shop.success', ['purchase' => $purchases[0]->id]);
-    $this->assertStringContainsString('shop/success', $redirectUrl);
-    $this->assertStringContainsString($purchases[0]->id, $redirectUrl);
+    // Verify contact was created/updated
+    $this->assertDatabaseHas('contacts', [
+        'email' => 'john@example.com',
+        'name' => 'John Doe',
+        'buyer' => true,
+    ]);
 });
 
 test('success page handles null purchase parameter', function () {
     // Test the controller method directly with reflection to bypass route model binding
-    $controller = new \App\Http\Controllers\ShopController;
+    $mockService = $this->mock(StripePaymentIntentServiceInterface::class);
+    $controller = new \App\Http\Controllers\ShopController($mockService);
     $request = new \Illuminate\Http\Request;
 
     $reflection = new \ReflectionClass($controller);
@@ -836,8 +844,6 @@ test('download ebook accepts confirmation hash via query string', function () {
 });
 
 test('processCheckout creates contact when purchase is made', function () {
-    Stripe::setApiKey(config('cashier.secret') ?: env('STRIPE_SECRET'));
-
     $category = Category::factory()->create(['name' => 'Marketing']);
     $ebook = Ebook::factory()->create([
         'category_id' => $category->id,
@@ -857,21 +863,25 @@ test('processCheckout creates contact when purchase is made', function () {
     $values['id'] = 'pi_test_123';
     $valuesProperty->setValue($paymentIntent, $values);
 
-    // Mock PaymentIntent::retrieve
-    $this->mock(\Stripe\PaymentIntent::class, function ($mock) use ($paymentIntent) {
-        $mock->shouldReceive('retrieve')
-            ->andReturn($paymentIntent);
-    });
+    $mockService = $this->mock(StripePaymentIntentServiceInterface::class);
+    $mockService->shouldReceive('setApiKey')
+        ->once();
+    $mockService->shouldReceive('retrieve')
+        ->once()
+        ->with('pi_test_123')
+        ->andReturn($paymentIntent);
 
-    // Since we can't easily mock static methods, we'll test the contact creation directly
+    $this->app->instance(StripePaymentIntentServiceInterface::class, $mockService);
+
     $email = 'newcontact@example.com';
-    $contact = Contact::updateOrCreate(
-        ['email' => $email],
-        [
-            'name' => 'John Doe',
-            'phone' => '1234567890',
-        ]
-    );
+    $response = $this->postJson(route('shop.checkout.process'), [
+        'name' => 'John Doe',
+        'email' => $email,
+        'phone' => '1234567890',
+        'payment_intent_id' => 'pi_test_123',
+    ]);
+
+    $response->assertStatus(200);
 
     $this->assertDatabaseHas('contacts', [
         'email' => $email,
@@ -1192,10 +1202,12 @@ test('processCheckout successfully processes payment and creates purchases', fun
     }
 
     try {
-        Stripe::setApiKey($originalStripeKey);
+        // This test uses real Stripe API, so we need to use the service
+        $service = app(StripePaymentIntentServiceInterface::class);
+        $service->setApiKey($originalStripeKey);
 
         // Create a real PaymentIntent in test mode
-        $paymentIntent = PaymentIntent::create([
+        $paymentIntent = $service->create([
             'amount' => 6998, // 69.98 in cents
             'currency' => 'usd',
             'payment_method_types' => ['card'],
@@ -1207,7 +1219,7 @@ test('processCheckout successfully processes payment and creates purchases', fun
 
         // Wait a moment for status to update
         sleep(1);
-        $paymentIntent = PaymentIntent::retrieve($paymentIntent->id);
+        $paymentIntent = $service->retrieve($paymentIntent->id);
 
         // Now call the actual endpoint
         $response = $this->postJson(route('shop.checkout.process'), [
