@@ -807,6 +807,12 @@
             .final-cta h2 {
                 font-size: 2rem;
             }
+
+            .hero-cta-card.development {
+                margin-top: 0;
+                padding: 25px;
+                min-height: auto;
+            }
         }
     </style>
 </head>
