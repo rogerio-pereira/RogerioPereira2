@@ -30,15 +30,15 @@ Route::get('/software-development', [SoftwareDevelopmentController::class, 'inde
 Route::post('/software-development', [SoftwareDevelopmentController::class, 'store'])->name('software-development.store');
 Route::get('/software-development/thank-you', [SoftwareDevelopmentController::class, 'thanks'])->name('software-development.thank-you');
 
-// Briefing
-Route::get('/briefing', [BriefingController::class, 'create'])->name('briefing.create');
-Route::post('/briefing', [BriefingController::class, 'store'])->name('briefing.store');
-Route::get('/briefing/thank-you', [BriefingController::class, 'thanks'])->name('briefing.thank-you');
-
 // Marketing
 Route::get('/marketing', [MarketingController::class, 'index'])->name('marketing');
 Route::post('/marketing', [MarketingController::class, 'store'])->name('marketing.store');
 Route::get('/marketing/thank-you', [MarketingController::class, 'thanks'])->name('marketing.thank-you');
+
+// Briefing
+Route::get('/briefing', [BriefingController::class, 'create'])->name('briefing.create');
+Route::post('/briefing', [BriefingController::class, 'store'])->name('briefing.store');
+Route::get('/briefing/thank-you', [BriefingController::class, 'thanks'])->name('briefing.thank-you');
 
 // Shop - Public routes for buying ebooks
 Route::get('/shop/{category?}', [ShopController::class, 'index'])->name('shop.index');
