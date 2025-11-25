@@ -67,6 +67,16 @@ class ShopController extends Controller
     }
 
     /**
+     * Display a dedicated landing page for a single ebook.
+     */
+    public function show(Ebook $ebook): View
+    {
+        $ebook->loadMissing('category');
+
+        return view('shop.ebook', compact('ebook'));
+    }
+
+    /**
      * Show checkout page with cart items.
      */
     public function checkout(): View|\Illuminate\Http\RedirectResponse

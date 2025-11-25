@@ -41,6 +41,7 @@ Route::post('/briefing', [BriefingController::class, 'store'])->name('briefing.s
 Route::get('/briefing/thank-you', [BriefingController::class, 'thanks'])->name('briefing.thank-you');
 
 // Shop - Public routes for buying ebooks
+Route::get('/shop/ebook/{ebook}', [ShopController::class, 'show'])->name('shop.show');
 Route::get('/shop/{category?}', [ShopController::class, 'index'])->name('shop.index');
 
 // Ebook download route (public, requires confirmation hash)
