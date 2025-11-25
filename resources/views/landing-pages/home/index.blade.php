@@ -813,6 +813,12 @@
                 padding: 25px;
                 min-height: auto;
             }
+
+            .column-card.development {
+                margin-top: 0;
+                padding: 25px;
+                min-height: auto;
+            }
         }
     </style>
 </head>
