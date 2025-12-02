@@ -1094,6 +1094,12 @@
                                 value="{{ old('email') }}"
                             >
                         </div>
+
+                        <input
+                            type='hidden'
+                            name='captcha'
+                            value=''
+                        >
                         
                         <button type="submit" class="btn-primary">
                             Get My Free Guide Now

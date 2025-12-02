@@ -20,6 +20,11 @@ class SoftwareDevelopmentController extends Controller
     {
         $validated = $request->validated();
 
+        $honeyPot = $validated['captcha'];
+        if(isset($honeyPot)) {
+            return redirect()->back()->with('message', 'Something went wrong. Please try again');
+        }
+
         $contact = Contact::updateOrCreate(
             ['email' => $validated['email']],
             [

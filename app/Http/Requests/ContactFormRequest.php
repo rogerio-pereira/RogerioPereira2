@@ -25,6 +25,7 @@ class ContactFormRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'captcha' => ['nullable'],
         ];
     }
 }

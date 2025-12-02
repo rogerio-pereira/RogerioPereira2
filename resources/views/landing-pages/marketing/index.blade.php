@@ -1041,6 +1041,9 @@
                         <label for="email">Your Email</label>
                         <input type="email" id="email" name="email" placeholder="Enter your best email address" required value="{{ old('email') }}">
                     </div>
+
+                    <input type='hidden' name='captcha' value='' >
+
                     <button type="submit" class="btn-primary">Get My Free Guide Now</button>
                 </form>
                 <p style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin-top: 15px;">We respect your privacy. Unsubscribe at any time.</p>
