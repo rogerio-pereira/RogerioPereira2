@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use RyanChandler\LaravelCloudflareTurnstile\Rules\Turnstile;
 
 class ContactFormRequest extends FormRequest
 {
@@ -21,11 +22,21 @@ class ContactFormRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $turnstileSiteKey = config('services.turnstile.key');
+        $turnstileSecretKey = config('services.turnstile.secret');
+        $isTurnstileEnabled = !empty($turnstileSiteKey) && !empty($turnstileSecretKey);
+
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'captcha' => ['nullable'],
         ];
+
+        if ($isTurnstileEnabled) {
+            $rules['cf-turnstile-response'] = ['required', new Turnstile];
+        }
+
+        return $rules;
     }
 }

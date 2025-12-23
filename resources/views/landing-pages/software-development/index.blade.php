@@ -12,6 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
+    <x-turnstile.scripts />
+    
     <style>
         * {
             margin: 0;
@@ -991,6 +993,10 @@
                     </div>
 
                     <input type='hidden' name='captcha' value='' >
+
+                    <div style="margin-bottom: 10px;">
+                        <x-turnstile />
+                    </div>
 
                     <button type="submit" class="btn-primary">Get My Free Assessment</button>
                 </form>

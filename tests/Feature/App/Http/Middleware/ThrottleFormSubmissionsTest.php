@@ -6,9 +6,11 @@ use App\Events\NewLead;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
+use RyanChandler\LaravelCloudflareTurnstile\Facades\Turnstile;
 
 beforeEach(function () {
     Cache::flush();
+    Turnstile::fake();
 });
 
 test('allows first form submission', function () {

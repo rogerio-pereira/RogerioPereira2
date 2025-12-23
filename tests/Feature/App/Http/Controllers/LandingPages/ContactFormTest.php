@@ -6,6 +6,11 @@ use App\Events\NewLead;
 use App\Models\Contact;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use RyanChandler\LaravelCloudflareTurnstile\Facades\Turnstile;
+
+beforeEach(function () {
+    Turnstile::fake();
+});
 
 test('automation form stores contact', function () {
     Event::fake();
