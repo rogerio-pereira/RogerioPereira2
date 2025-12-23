@@ -347,3 +347,48 @@ test('software development form updates existing contact', function () {
 
     $this->assertDatabaseCount('contacts', 1);
 });
+
+test('automation form blocks submission when honeypot captcha is filled', function () {
+    $data = [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'captcha' => 'spam-bot-value',
+        'cf-turnstile-response' => Turnstile::dummy(),
+    ];
+
+    $response = $this->post(route('automation.store'), $data);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('message', 'Something went wrong. Please try again');
+    $this->assertDatabaseCount('contacts', 0);
+});
+
+test('marketing form blocks submission when honeypot captcha is filled', function () {
+    $data = [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'captcha' => 'spam-bot-value',
+        'cf-turnstile-response' => Turnstile::dummy(),
+    ];
+
+    $response = $this->post(route('marketing.store'), $data);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('message', 'Something went wrong. Please try again');
+    $this->assertDatabaseCount('contacts', 0);
+});
+
+test('software development form blocks submission when honeypot captcha is filled', function () {
+    $data = [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'captcha' => 'spam-bot-value',
+        'cf-turnstile-response' => Turnstile::dummy(),
+    ];
+
+    $response = $this->post(route('software-development.store'), $data);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('message', 'Something went wrong. Please try again');
+    $this->assertDatabaseCount('contacts', 0);
+});

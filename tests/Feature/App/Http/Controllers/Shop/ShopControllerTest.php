@@ -325,6 +325,23 @@ test('shop index passes categories to view', function () {
     $this->assertEquals($category->id, $categories->first()->id);
 });
 
+test('shop show displays ebook with category loaded', function () {
+    $category = Category::factory()->create(['name' => 'Automation']);
+    $ebook = Ebook::factory()->create([
+        'category_id' => $category->id,
+        'file' => 'ebooks/test.pdf',
+    ]);
+
+    $response = $this->get(route('shop.show', ['ebook' => $ebook->id]));
+
+    $response->assertStatus(200);
+    $response->assertViewIs('shop.ebook');
+    $response->assertViewHas('ebook');
+    $ebookFromView = $response->viewData('ebook');
+    $this->assertTrue($ebookFromView->relationLoaded('category'));
+    $this->assertEquals($category->id, $ebookFromView->category->id);
+});
+
 test('shop index ignores invalid category parameter', function () {
     $category = Category::factory()->create(['name' => 'Automation']);
     $ebook = Ebook::factory()->create([
