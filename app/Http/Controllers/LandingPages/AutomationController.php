@@ -20,8 +20,8 @@ class AutomationController extends Controller
     {
         $validated = $request->validated();
 
-        $honeyPot = $validated['captcha'];
-        if (isset($honeyPot)) {
+        $honeyPot = $validated['captcha'] ?? null;
+        if (isset($honeyPot) && $honeyPot !== null && $honeyPot !== '') {
             return redirect()->back()->with('message', 'Something went wrong. Please try again');
         }
 
