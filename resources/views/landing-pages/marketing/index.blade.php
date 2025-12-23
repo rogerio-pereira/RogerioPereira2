@@ -1031,6 +1031,19 @@
                 <div class="form-container">
                 <h3>Get Your Free Marketing Strategy Guide</h3>
                 <p>Discover the exact strategies that help small businesses compete with bigger budgets and generate consistent leads.</p>
+                
+                @if(session('error'))
+                    <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem;">
+                        {{ session('error') }}
+                    </div>
+                @endif
+                
+                @if(session('message'))
+                    <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem;">
+                        {{ session('message') }}
+                    </div>
+                @endif
+                
                 <form id="leadForm" action="{{ route('marketing.store') }}" method="POST">
                     @csrf
                     <div class="form-group">

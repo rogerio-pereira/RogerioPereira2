@@ -1069,6 +1069,18 @@
                     <h2>Get Your Free Guide</h2>
                     <p>Discover 10 automation strategies that will save you hours every week</p>
                     
+                    @if(session('error'))
+                        <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem;">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+                    
+                    @if(session('message'))
+                        <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem;">
+                            {{ session('message') }}
+                        </div>
+                    @endif
+                    
                     <form id="leadForm" action="{{ route('automation.store') }}" method="POST">
                         @csrf
                         <div class="form-group">

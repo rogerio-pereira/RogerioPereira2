@@ -966,6 +966,19 @@
                 <div class="form-container">
                 <h3>Get a Free Project Assessment</h3>
                 <p>Tell me about your new project idea and I'll send you a free assessment with technical recommendations and next steps.</p>
+                
+                @if(session('error'))
+                    <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem;">
+                        {{ session('error') }}
+                    </div>
+                @endif
+                
+                @if(session('message'))
+                    <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem;">
+                        {{ session('message') }}
+                    </div>
+                @endif
+                
                 <form id="leadForm" action="{{ route('software-development.store') }}" method="POST">
                     @csrf
                     <div class="form-group">
