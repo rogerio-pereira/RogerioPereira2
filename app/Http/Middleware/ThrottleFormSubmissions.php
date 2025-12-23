@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Carbon\Carbon;
 use Closure;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,10 +19,10 @@ class ThrottleFormSubmissions
     public function handle(Request $request, Closure $next): Response
     {
         $route = $request->route();
-        $routeName = $route->getName();
-        $formType = str_replace('.store', '', $routeName);
+        $routeName = $route?->getName();
+        $formType = str_replace('.store', '', $routeName ?? '');
 
-        $ipAddress = $request->ip();
+        $ipAddress = $request->ip() ?? '';
         $maskedIp = md5($ipAddress);
 
         $currentTime = Carbon::now();
@@ -51,7 +52,7 @@ class ThrottleFormSubmissions
         }
 
         $email = $request->input('email');
-        if ($email) {
+        if ($email !== null && $email !== '') {
             $isDomainExceeded = $this->hasExceededEmailDomainLimit($ipAddress, $email, $currentTime);
             if ($isDomainExceeded) {
                 $this->blockForSevenDays($maskedIp, $currentTime);
@@ -90,9 +91,18 @@ class ThrottleFormSubmissions
     /**
      * Return error message when user is blocked
      */
-    private function returnBlockedError(string $identifier, Carbon $currentTime)
+    private function returnBlockedError(string $identifier, Carbon $currentTime): RedirectResponse
     {
         $blockedUntil = Cache::get("form_submission_blocked:{$identifier}");
+
+        if ($blockedUntil === null) {
+            $errorMessage = 'You have reached the submission limit. Please try again later.';
+
+            return redirect()
+                ->back()
+                ->with('error', $errorMessage);
+        }
+
         $daysDifference = $currentTime->diffInDays($blockedUntil, false);
         $daysRemaining = $daysDifference + 1;
         $errorMessage = "You have reached the submission limit. Please try again in {$daysRemaining} day(s).";
