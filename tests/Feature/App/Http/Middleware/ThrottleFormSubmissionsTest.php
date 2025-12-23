@@ -457,3 +457,28 @@ test('middleware handles submission when email is null', function () {
 
     $response->assertSessionHasErrors(['email']);
 });
+
+/**
+ * Tests the edge case where returnBlockedError is called but cache returns null.
+ * This covers lines 99-103 where the method handles a null blockedUntil value.
+ */
+test('returnBlockedError handles null blockedUntil from cache', function () {
+    $middleware = new \App\Http\Middleware\ThrottleFormSubmissions;
+    $reflection = new \ReflectionClass($middleware);
+    $method = $reflection->getMethod('returnBlockedError');
+    $method->setAccessible(true);
+
+    $identifier = md5('192.168.1.999');
+    $currentTime = Carbon::now();
+
+    // Ensure cache is empty for this identifier
+    Cache::forget("form_submission_blocked:{$identifier}");
+
+    // Call returnBlockedError directly - it should handle null gracefully
+    $response = $method->invoke($middleware, $identifier, $currentTime);
+
+    expect($response)->toBeInstanceOf(\Illuminate\Http\RedirectResponse::class);
+    $session = session()->all();
+    expect($session)->toHaveKey('error');
+    expect($session['error'])->toBe('You have reached the submission limit. Please try again later.');
+});
