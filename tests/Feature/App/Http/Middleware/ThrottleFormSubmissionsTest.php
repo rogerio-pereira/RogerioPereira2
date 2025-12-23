@@ -13,14 +13,20 @@ beforeEach(function () {
     Turnstile::fake();
 });
 
-test('allows first form submission', function () {
-    Event::fake();
-
-    $data = [
+function getFormData(array $data = []): array
+{
+    return array_merge([
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'captcha' => '',
-    ];
+        'cf-turnstile-response' => Turnstile::dummy(),
+    ], $data);
+}
+
+test('allows first form submission', function () {
+    Event::fake();
+
+    $data = getFormData();
 
     $response = $this->post(route('automation.store'), $data);
 
@@ -32,11 +38,7 @@ test('allows first form submission', function () {
 test('blocks second submission of same form on same day', function () {
     Event::fake();
 
-    $data = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
+    $data = getFormData();
 
     $firstResponse = $this->post(route('automation.store'), $data);
     $firstResponse->assertRedirect(route('automation.thank-you'));
@@ -49,23 +51,9 @@ test('blocks second submission of same form on same day', function () {
 test('allows submission of different forms on same day', function () {
     Event::fake();
 
-    $automationData = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
-
-    $marketingData = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
-
-    $softwareDevData = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
+    $automationData = getFormData();
+    $marketingData = getFormData();
+    $softwareDevData = getFormData();
 
     $automationResponse = $this->post(route('automation.store'), $automationData);
     $automationResponse->assertRedirect(route('automation.thank-you'));
@@ -82,11 +70,7 @@ test('allows submission of different forms on same day', function () {
 test('blocks after submitting three different forms on same day', function () {
     Event::fake();
 
-    $data = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
+    $data = getFormData();
 
     $this->post(route('automation.store'), $data);
     $this->post(route('marketing.store'), $data);
@@ -103,11 +87,7 @@ test('blocks after submitting three different forms on same day', function () {
 test('blocks IP for 7 days after third submission', function () {
     Event::fake();
 
-    $data = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
+    $data = getFormData();
 
     $this->post(route('automation.store'), $data);
     $this->post(route('marketing.store'), $data);
@@ -131,11 +111,7 @@ test('blocks submission when IP is already blocked', function () {
 
     $this->from(route('automation'))->withServerVariables(['REMOTE_ADDR' => $ipAddress]);
 
-    $data = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
+    $data = getFormData();
 
     $response = $this->post(route('automation.store'), $data);
     $response->assertRedirect();
@@ -155,11 +131,7 @@ test('blocks when same IP submits more than 3 emails from same domain', function
     $domainKey = "form_submission_domain:{$ipAddress}:gmail.com:{$today}";
     Cache::put($domainKey, 3, now()->addDay());
 
-    $data = [
-        'name' => 'John Doe',
-        'email' => 'john4@gmail.com',
-        'captcha' => '',
-    ];
+    $data = getFormData(['email' => 'john4@gmail.com']);
 
     $response = $this->post(route('automation.store'), $data);
     $response->assertRedirect();
@@ -172,23 +144,9 @@ test('allows up to 3 emails from same domain per IP per day', function () {
     $ipAddress = '192.168.1.1';
     $this->from(route('automation'))->withServerVariables(['REMOTE_ADDR' => $ipAddress]);
 
-    $data1 = [
-        'name' => 'John Doe',
-        'email' => 'john1@gmail.com',
-        'captcha' => '',
-    ];
-
-    $data2 = [
-        'name' => 'Jane Doe',
-        'email' => 'jane@gmail.com',
-        'captcha' => '',
-    ];
-
-    $data3 = [
-        'name' => 'Bob Doe',
-        'email' => 'bob@gmail.com',
-        'captcha' => '',
-    ];
+    $data1 = getFormData(['email' => 'john1@gmail.com']);
+    $data2 = getFormData(['email' => 'jane@gmail.com']);
+    $data3 = getFormData(['email' => 'bob@gmail.com']);
 
     $response1 = $this->post(route('automation.store'), $data1);
     $response1->assertRedirect(route('automation.thank-you'));
@@ -205,11 +163,7 @@ test('allows up to 3 emails from same domain per IP per day', function () {
 test('different IPs can submit independently', function () {
     Event::fake();
 
-    $data = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
+    $data = getFormData();
 
     $this->from(route('automation'))->withServerVariables(['REMOTE_ADDR' => '192.168.1.1']);
     $response1 = $this->post(route('automation.store'), $data);
@@ -227,11 +181,7 @@ test('different IPs can submit independently', function () {
 test('allows resubmission after midnight', function () {
     Event::fake();
 
-    $data = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
+    $data = getFormData();
 
     $today = Carbon::today();
     Carbon::setTestNow($today->copy()->setTime(23, 59, 59));
@@ -253,11 +203,7 @@ test('allows resubmission after midnight', function () {
 test('blocks after third submission triggers 7 day block', function () {
     Event::fake();
 
-    $data = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'captcha' => '',
-    ];
+    $data = getFormData();
 
     $this->post(route('automation.store'), $data);
     $this->post(route('marketing.store'), $data);
@@ -280,15 +226,15 @@ test('email domain limit blocks after 3 submissions from same domain', function 
     $ipAddress = '192.168.1.1';
     $this->from(route('automation'))->withServerVariables(['REMOTE_ADDR' => $ipAddress]);
 
-    $data1 = ['name' => 'John', 'email' => 'john1@gmail.com', 'captcha' => ''];
-    $data2 = ['name' => 'Jane', 'email' => 'jane@gmail.com', 'captcha' => ''];
-    $data3 = ['name' => 'Bob', 'email' => 'bob@gmail.com', 'captcha' => ''];
+    $data1 = getFormData(['name' => 'John', 'email' => 'john1@gmail.com']);
+    $data2 = getFormData(['name' => 'Jane', 'email' => 'jane@gmail.com']);
+    $data3 = getFormData(['name' => 'Bob', 'email' => 'bob@gmail.com']);
 
     $this->post(route('automation.store'), $data1);
     $this->post(route('marketing.store'), $data2);
     $this->post(route('software-development.store'), $data3);
 
-    $data4 = ['name' => 'Alice', 'email' => 'alice@gmail.com', 'captcha' => ''];
+    $data4 = getFormData(['name' => 'Alice', 'email' => 'alice@gmail.com']);
     $response = $this->post(route('automation.store'), $data4);
 
     $response->assertRedirect();
@@ -304,9 +250,9 @@ test('different email domains are tracked separately', function () {
     $ipAddress = '192.168.1.1';
     $this->from(route('automation'))->withServerVariables(['REMOTE_ADDR' => $ipAddress]);
 
-    $gmailData = ['name' => 'John', 'email' => 'john@gmail.com', 'captcha' => ''];
-    $yahooData = ['name' => 'Jane', 'email' => 'jane@yahoo.com', 'captcha' => ''];
-    $outlookData = ['name' => 'Bob', 'email' => 'bob@outlook.com', 'captcha' => ''];
+    $gmailData = getFormData(['name' => 'John', 'email' => 'john@gmail.com']);
+    $yahooData = getFormData(['name' => 'Jane', 'email' => 'jane@yahoo.com']);
+    $outlookData = getFormData(['name' => 'Bob', 'email' => 'bob@outlook.com']);
 
     $response1 = $this->post(route('automation.store'), $gmailData);
     $response1->assertRedirect(route('automation.thank-you'));

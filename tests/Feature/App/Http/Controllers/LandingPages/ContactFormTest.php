@@ -18,6 +18,7 @@ test('automation form stores contact', function () {
     $data = [
         'name' => 'John Doe',
         'email' => 'john@example.com',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('automation.store'), $data);
@@ -52,6 +53,7 @@ test('automation form stores contact with phone', function () {
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
         'phone' => '+1234567890',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('automation.store'), $data);
@@ -84,6 +86,7 @@ test('automation form validates email format', function () {
     $data = [
         'name' => 'John Doe',
         'email' => 'invalid-email',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('automation.store'), $data);
@@ -98,6 +101,7 @@ test('marketing form stores contact', function () {
     $data = [
         'name' => 'John Doe',
         'email' => 'john@example.com',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('marketing.store'), $data);
@@ -132,6 +136,7 @@ test('marketing form stores contact with phone', function () {
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
         'phone' => '+1234567890',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('marketing.store'), $data);
@@ -164,6 +169,7 @@ test('software development form stores contact', function () {
     $data = [
         'name' => 'John Doe',
         'email' => 'john@example.com',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('software-development.store'), $data);
@@ -198,6 +204,7 @@ test('software development form stores contact with phone', function () {
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
         'phone' => '+1234567890',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('software-development.store'), $data);
@@ -260,6 +267,7 @@ test('automation form updates existing contact', function () {
         'name' => 'New Name',
         'email' => 'john@example.com',
         'phone' => '+2222222222',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('automation.store'), $data);
@@ -292,6 +300,7 @@ test('marketing form updates existing contact and resets do_not_contact', functi
     $data = [
         'name' => 'New Name',
         'email' => 'jane@example.com',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('marketing.store'), $data);
@@ -322,6 +331,7 @@ test('software development form updates existing contact', function () {
     $data = [
         'name' => 'Updated Name',
         'email' => 'test@example.com',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $response = $this->post(route('software-development.store'), $data);

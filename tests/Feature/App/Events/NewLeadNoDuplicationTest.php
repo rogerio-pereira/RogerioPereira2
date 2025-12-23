@@ -9,6 +9,11 @@ use App\Models\Contact;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use RyanChandler\LaravelCloudflareTurnstile\Facades\Turnstile;
+
+beforeEach(function () {
+    Turnstile::fake();
+});
 
 test('new lead event triggers only one slack notification per dispatch', function () {
     Notification::fake();
@@ -54,6 +59,7 @@ test('new lead event dispatches only once when called from controller', function
     $data = [
         'name' => 'Test User',
         'email' => 'test@example.com',
+        'cf-turnstile-response' => Turnstile::dummy(),
     ];
 
     $this->post(route('automation.store'), $data);
