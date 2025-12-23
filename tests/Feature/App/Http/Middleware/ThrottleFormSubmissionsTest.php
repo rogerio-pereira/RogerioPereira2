@@ -216,7 +216,7 @@ test('different IPs can submit independently', function () {
     $response1->assertRedirect(route('automation.thank-you'));
 
     Cache::flush();
-    
+
     $this->from(route('automation'))->withServerVariables(['REMOTE_ADDR' => '192.168.1.2']);
     $response2 = $this->post(route('automation.store'), $data);
     $response2->assertRedirect(route('automation.thank-you'));

@@ -161,8 +161,8 @@ class ThrottleFormSubmissions
     ): void {
         $today = $currentTime->format('Y-m-d');
         $tomorrow = $currentTime->copy()
-                        ->addDay()
-                        ->startOfDay();
+            ->addDay()
+            ->startOfDay();
         $secondsUntilMidnight = $currentTime->diffInSeconds($tomorrow);
 
         $formCacheKey = "form_submission:{$identifier}:{$formType}:{$today}";

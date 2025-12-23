@@ -24,7 +24,7 @@ class ContactFormRequest extends FormRequest
     {
         $turnstileSiteKey = config('services.turnstile.key');
         $turnstileSecretKey = config('services.turnstile.secret');
-        $isTurnstileEnabled = !empty($turnstileSiteKey) && !empty($turnstileSecretKey);
+        $isTurnstileEnabled = ! empty($turnstileSiteKey) && ! empty($turnstileSecretKey);
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
