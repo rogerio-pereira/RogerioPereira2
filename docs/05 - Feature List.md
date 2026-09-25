@@ -19,7 +19,7 @@ This file is the source of truth for feature and wave status. Update it when a w
 | F01b | [F01b Foundation stack fix](#f01b-foundation-stack-fix) | [FDR_001](FDRs/Done/FDR_001_foundation_reset.md) | Done (PR #3 open) |
 | F02 | [F02 Project docs and agent setup](#f02-project-docs-and-agent-setup) | [FDR_002](FDRs/Done/FDR_002_project_docs_and_agent_setup.md) | In progress |
 | F03 | [F03 Public design system and layout](#f03-public-design-system-and-layout) | [FDR_003](FDRs/ToDo/FDR_003_public_design_system_and_layout.md) | To do |
-| F04 | [F04 Admin shell, auth and users](#f04-admin-shell-auth-and-users) | [FDR_004](FDRs/ToDo/FDR_004_admin_shell_auth_and_users.md) | To do |
+| F04 | [F04 Admin shell, auth and users](#f04-admin-shell-auth-and-users) | [FDR_004](FDRs/Done/FDR_004_admin_shell_auth_and_users.md) | Done (PR open) |
 | F05 | [F05 Media and Markdown field](#f05-media-and-markdown-field) | [FDR_005](FDRs/ToDo/FDR_005_media_and_markdown_field.md) | To do |
 | F06 | [F06 FAQs](#f06-faqs) | [FDR_006](FDRs/ToDo/FDR_006_faqs.md) | To do |
 | F07 | [F07 Home page (static sections)](#f07-home-page-static-sections) | [FDR_007](FDRs/ToDo/FDR_007_home_page.md) | To do |
@@ -140,7 +140,7 @@ Backup branch `bkp_20260924_old-website` and integration branch `new-website` cr
 
 **Branch:** `feat/f04-admin-shell` · **Wave:** 1 · **Depends on:** [F02](#f02-project-docs-and-agent-setup)
 
-**ADRs:** [ADR_010](ADRs/ADR_010_admin_auth_seeded_users.md), [ADR_004](ADRs/ADR_004_content_model_markdown_uuids.md) · **FDR:** [FDR_004](FDRs/ToDo/FDR_004_admin_shell_auth_and_users.md)
+**ADRs:** [ADR_010](ADRs/ADR_010_admin_auth_seeded_users.md), [ADR_004](ADRs/ADR_004_content_model_markdown_uuids.md) · **FDR:** [FDR_004](FDRs/Done/FDR_004_admin_shell_auth_and_users.md)
 
 ---
 
