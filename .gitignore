@@ -21,8 +21,3 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/.docker/*
-
-**/caddy
-frankenphp
-frankenphp-worker.php
