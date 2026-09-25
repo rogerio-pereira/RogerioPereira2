@@ -1,4 +1,4 @@
-import { Config, RouteParams } from 'ziggy-js';
+import type { Config, RouteParams } from 'ziggy-js';
 
 declare global {
     function route(): Config;
