@@ -16,6 +16,7 @@ This file is the source of truth for feature and wave status. Update it when a w
 |---|---|---|---|
 | Step 0 | [Step 0 Backup and branches](#step-0-backup-and-branches) | — | Done |
 | F01 | [F01 Foundation reset](#f01-foundation-reset) | [FDR_001](FDRs/Done/FDR_001_foundation_reset.md) | Done (PR #1 open) |
+| F01b | [F01b Foundation stack fix](#f01b-foundation-stack-fix) | [FDR_001](FDRs/Done/FDR_001_foundation_reset.md) | Done (PR #3 open) |
 | F02 | [F02 Project docs and agent setup](#f02-project-docs-and-agent-setup) | [FDR_002](FDRs/Done/FDR_002_project_docs_and_agent_setup.md) | In progress |
 | F03 | [F03 Public design system and layout](#f03-public-design-system-and-layout) | [FDR_003](FDRs/ToDo/FDR_003_public_design_system_and_layout.md) | To do |
 | F04 | [F04 Admin shell, auth and users](#f04-admin-shell-auth-and-users) | [FDR_004](FDRs/ToDo/FDR_004_admin_shell_auth_and_users.md) | To do |
@@ -92,6 +93,18 @@ Backup branch `bkp_20260924_old-website` and integration branch `new-website` cr
 **Branch:** `feat/f01-foundation` · **Wave:** 0 · **Depends on:** Step 0 · **Status:** Done (merged, PR #1)
 
 **ADRs:** [ADR_001](ADRs/ADR_001_complete_refactor_fresh_starter_kit_frontporch_base.md), [ADR_007](ADRs/ADR_007_no_queues_workers_scheduler_redis.md) · **FDR:** [FDR_001](FDRs/Done/FDR_001_foundation_reset.md)
+
+---
+
+<a id="f01b-foundation-stack-fix"></a>
+
+### F01b · Foundation stack fix
+
+**Objective:** the base matches the Laravel 13 Vue starter kit (Laravel 13, Fortify with 2FA, Wayfinder, Tailwind 4, Vite 8, Inertia v3, reka-ui) that F03 and F04 assume; F01 had installed the old Laravel 12 kit.
+
+**Branch:** `fix/f01b-foundation-stack` · **Wave:** 0 · **Depends on:** [F01](#f01-foundation-reset) · **Status:** Done (PR #3 open)
+
+**FDR:** [FDR_001](FDRs/Done/FDR_001_foundation_reset.md) (deviation noted there). Passkeys are not used; email verification and registration stay until F04.
 
 ---
 
