@@ -38,10 +38,10 @@
 
 ## Acceptance criteria
 
-- [ ] Fonts are self-hosted; no external font request.
-- [ ] Tokens available as Tailwind utilities and CSS variables; `site.css` holds the template's visual rules with the same class names and values.
-- [ ] The server HTML of a public page contains the SEO tags with the right values, without JavaScript.
-- [ ] Error pages use the brand; the admin uses the brand values.
+- [x] Fonts are self-hosted; no external font request.
+- [x] Tokens available as Tailwind utilities and CSS variables; `site.css` holds the template's visual rules with the same class names and values.
+- [x] The server HTML of a public page contains the SEO tags with the right values, without JavaScript.
+- [x] Error pages use the brand; the admin uses the brand values.
 
 ---
 
@@ -58,3 +58,13 @@
 | 7 | `PageHead.vue` (crumbs, label, h1, lead) and port `SitePagination.vue` to the template `.pager` markup. | `feat(ui): add page head and pagination components` |
 | 8 | Port FrontPorch error pages (404, 500, 503) with the new look. | `feat(ui): add branded error pages` |
 | 9 | Tests: Feature test with a test-only route asserting the tags in the HTML; error pages; Browser test of the layout on a test-only page. | `test(ui): cover layout, SEO tags and error pages` |
+
+---
+
+## Implementation notes
+
+- `--muted` and `--radius` are the shadcn admin values everywhere and the template values (`#9AA1A8`, `2px`) only inside the `.site` wrapper of `SiteLayout`. The template's body and element rules (`body`, `img`, `a`, `h1`–`h3`, `section`, `footer`, `p`) are scoped to `.site` so the admin is not affected.
+- Small layout-free "atoms" keep their `display:inline-flex` in `site.css` (`.btn`, `.log`, `.status`, `.more`, `.pager a`, footer social links, `.cover-ph`, FAQ `summary`); arrangements of sections and cards are left to the components.
+- Class names for the Design System additions without a name: `.form-err`, `.list-empty`, `footer .legal a`. The Turnstile widget needs no CSS.
+- Droid Sans Mono ships without its Apache 2.0 license file (the sources only have the two OFL files).
+- The test-only page `resources/js/pages/testing/Layout.vue` is used by the Feature and Browser tests.

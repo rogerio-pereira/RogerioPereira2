@@ -18,7 +18,7 @@ This file is the source of truth for feature and wave status. Update it when a w
 | F01 | [F01 Foundation reset](#f01-foundation-reset) | [FDR_001](FDRs/Done/FDR_001_foundation_reset.md) | Done (PR #1 open) |
 | F01b | [F01b Foundation stack fix](#f01b-foundation-stack-fix) | [FDR_001](FDRs/Done/FDR_001_foundation_reset.md) | Done (PR #3 open) |
 | F02 | [F02 Project docs and agent setup](#f02-project-docs-and-agent-setup) | [FDR_002](FDRs/Done/FDR_002_project_docs_and_agent_setup.md) | In progress |
-| F03 | [F03 Public design system and layout](#f03-public-design-system-and-layout) | [FDR_003](FDRs/ToDo/FDR_003_public_design_system_and_layout.md) | To do |
+| F03 | [F03 Public design system and layout](#f03-public-design-system-and-layout) | [FDR_003](FDRs/Done/FDR_003_public_design_system_and_layout.md) | Done (PR open) |
 | F04 | [F04 Admin shell, auth and users](#f04-admin-shell-auth-and-users) | [FDR_004](FDRs/ToDo/FDR_004_admin_shell_auth_and_users.md) | To do |
 | F05 | [F05 Media and Markdown field](#f05-media-and-markdown-field) | [FDR_005](FDRs/ToDo/FDR_005_media_and_markdown_field.md) | To do |
 | F06 | [F06 FAQs](#f06-faqs) | [FDR_006](FDRs/ToDo/FDR_006_faqs.md) | To do |
@@ -126,9 +126,9 @@ Backup branch `bkp_20260924_old-website` and integration branch `new-website` cr
 
 **Objective:** fonts, tokens, template styles, public layout, server-side SEO block, page head and pagination components, branded error pages.
 
-**Branch:** `feat/f03-design-system` · **Wave:** 1 · **Depends on:** [F02](#f02-project-docs-and-agent-setup)
+**Branch:** `feat/f03-design-system` · **Wave:** 1 · **Depends on:** [F02](#f02-project-docs-and-agent-setup) · **Status:** Done (PR open)
 
-**ADRs:** [ADR_002](ADRs/ADR_002_client_side_inertia_server_side_seo_meta.md), [ADR_003](ADRs/ADR_003_hybrid_css_tailwind_tokens_template_classes.md) · **FDR:** [FDR_003](FDRs/ToDo/FDR_003_public_design_system_and_layout.md)
+**ADRs:** [ADR_002](ADRs/ADR_002_client_side_inertia_server_side_seo_meta.md), [ADR_003](ADRs/ADR_003_hybrid_css_tailwind_tokens_template_classes.md) · **FDR:** [FDR_003](FDRs/Done/FDR_003_public_design_system_and_layout.md)
 
 ---
 
