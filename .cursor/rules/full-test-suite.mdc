@@ -1,0 +1,39 @@
+---
+description: Always run the full Pest suite once (not a subset, not repeated with lower thresholds).
+alwaysApply: true
+---
+
+# Full test suite only
+
+## Default gate (one run)
+
+When validating a change or finishing a task, run the **complete** suite **once**:
+
+```
+./vendor/bin/sail artisan test --parallel --coverage --min=90
+```
+
+## Separate check (also once)
+
+Code coverage and type coverage are **different** checks. Do **not** merge them into one command. After the gate above passes, run type coverage **once** if finishing the task:
+
+```
+./vendor/bin/sail artisan test --type-coverage --min=90 --parallel
+```
+
+## Do not
+
+- Finish with only one file, folder, or `--filter`
+- Re-run the same suite with a lower `--min` (e.g. 0) — if `--min=90` passes, lower would too; if it fails, you already know
+- Run the full suite multiple times “just to be sure” with different thresholds
+- Treat a green subset as “tests passed”
+
+## Exception
+
+A single file/filter is allowed **only** while diagnosing a failure. After the fix, run the **default gate once** before considering the work done.
+
+Also run the linter when finishing:
+
+```
+./vendor/bin/sail exec laravel.test vendor/bin/pint --parallel
+```

@@ -1,0 +1,17 @@
+---
+description: Domain-by-domain planning interviews — one question at a time, decision logs, sync contradictions. Use when simplifying plans, interviewing for schema/CMS scope, or writing planning docs.
+---
+
+# Domain planning interviews
+
+When refining an overbuilt plan or locking schema/admin decisions:
+
+1. **Split by domain** (e.g. content type, uploads, shared platform). One domain at a time.
+2. **One question at a time.** Wait for the answer before asking the next.
+3. **Prefer simplicity.** Challenge taxonomy tables, draft flags, dual formats, and separate resources when a simpler option exists.
+4. **Persist decisions** in a per-domain planning file (Decisions table + Interview log + open queue). Update after every answer.
+5. **Sync contradictions immediately** in parent plans and related docs when a decision invalidates prior text.
+6. **Repository docs stay in English** (chat may use the user’s language).
+7. Do **not** implement until the domain interview for that slice is locked (or the user asks to build).
+
+Suggested domain file sections: Status · Decisions (locked) · Locked model · Rejected · Interview queue · Interview log.
