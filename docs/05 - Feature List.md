@@ -60,7 +60,7 @@ flowchart LR
 
 | Wave | Runs | Features (max 3 in parallel) | Starts when | Status |
 |---|---|---|---|---|
-| 0 | Orchestrator alone, in order | Step 0, [F01](#f01-foundation-reset), [F02](#f02-project-docs-and-agent-setup) | Now | In progress (Step 0 done, F01 PR open, F02 in progress) |
+| 0 | Orchestrator alone, in order | Step 0, [F01](#f01-foundation-reset), [F02](#f02-project-docs-and-agent-setup) | Now | Done (Step 0, F01 and F02 merged) |
 | 1 | 2 agents | [F03](#f03-public-design-system-and-layout), [F04](#f04-admin-shell-auth-and-users) | F02 merged | To do |
 | 2 | 3 agents | [F05](#f05-media-and-markdown-field), [F06](#f06-faqs), [F07](#f07-home-page-static-sections) | F03 and F04 merged | To do |
 | 3 | 3 agents | [F08](#f08-cases), [F09](#f09-blog), [F10](#f10-project-request-form) | All of wave 2 merged | To do |
@@ -89,7 +89,7 @@ Backup branch `bkp_20260924_old-website` and integration branch `new-website` cr
 
 **Objective:** the repo holds a clean Laravel 13 Vue starter kit with FrontPorch's Sail setup, test tools and CI, and nothing from the old site.
 
-**Branch:** `feat/f01-foundation` · **Wave:** 0 · **Depends on:** Step 0 · **Status:** Done (PR #1 open)
+**Branch:** `feat/f01-foundation` · **Wave:** 0 · **Depends on:** Step 0 · **Status:** Done (merged, PR #1)
 
 **ADRs:** [ADR_001](ADRs/ADR_001_complete_refactor_fresh_starter_kit_frontporch_base.md), [ADR_007](ADRs/ADR_007_no_queues_workers_scheduler_redis.md) · **FDR:** [FDR_001](FDRs/Done/FDR_001_foundation_reset.md)
 
@@ -101,7 +101,7 @@ Backup branch `bkp_20260924_old-website` and integration branch `new-website` cr
 
 **Objective:** the repository documentation (`docs/`, `.cursor/`, `CLAUDE.md`) exists, generated from the plan, so agents work from the repo docs.
 
-**Branch:** `docs/f02-project-docs` · **Wave:** 0 · **Depends on:** [F01](#f01-foundation-reset) · **Status:** In progress
+**Branch:** `docs/f02-project-docs` · **Wave:** 0 · **Depends on:** [F01](#f01-foundation-reset) · **Status:** Done (merged, PR #2)
 
 **ADRs:** [ADR_001](ADRs/ADR_001_complete_refactor_fresh_starter_kit_frontporch_base.md), [ADR_011](ADRs/ADR_011_delivery_workflow.md) · **FDR:** [FDR_002](FDRs/Done/FDR_002_project_docs_and_agent_setup.md)
 
