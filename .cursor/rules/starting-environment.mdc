@@ -1,0 +1,91 @@
+---
+description: Standard procedure for starting the environment and running tests via Sail.
+alwaysApply: true
+---
+
+# Starting Sail and testing
+
+- When the user asks to "start the environment," use commands via Sail.
+- Execute everything within Sail (e.g., `sail <command>`).
+- Ensure that the tests pass before finalizing the task.
+- All code must be in English.
+- Keep code clean and follow PSRs (one instruction per line).
+- Do **not** use ternary operators (`condition ? a : b`) in PHP; use explicit `if` / `else` or early returns.
+- If `vendor` does not exist, install with the container `laravelsail/php84-composer:latest`
+(do not use local PHP/Composer). The `php85-composer` image does not exist; the `php84-composer` image is used only to install dependencies (the app itself runs on PHP 8.5 in Sail).
+
+
+## Useful Commands
+
+### Starting Containers
+```
+test -d ./vendor || \
+    docker run --rm -u "$(id -u):$(id -g)" \
+        -v "$(pwd):/var/www/html" \
+        -w /var/www/html \
+        laravelsail/php84-composer:latest \
+        composer install --ignore-platform-reqs --no-interaction --prefer-dist --optimize-autoloader
+
+./vendor/bin/sail up -d
+
+test -f .env || \
+    cp .env.example .env
+
+grep -q "^APP_KEY=" .env || \
+    ./vendor/bin/sail artisan key:generate
+
+grep -q "^APP_KEY=$" .env && \
+    ./vendor/bin/sail artisan key:generate
+
+./vendor/bin/sail npm install
+./vendor/bin/sail npm run build
+./vendor/bin/sail npm run dev
+```
+
+### Running tests (mandatory — full suite once)
+When validating work, run the **complete** suite **once** with the required threshold. Do **not** run a single file/folder/`--filter` as the final check, and do **not** re-run the same suite with a lower `--min`.
+
+```
+./vendor/bin/sail artisan test --parallel --coverage --min=90
+```
+
+Type coverage is a **separate** check (not the same command). Run it once when finishing:
+
+```
+./vendor/bin/sail artisan test --type-coverage --min=90 --parallel
+```
+
+A path/`--filter` run is allowed only while diagnosing a failure; the task is not done until the coverage gate above passes.
+
+### Running linter
+```
+./vendor/bin/sail exec laravel.test vendor/bin/pint --parallel
+```
+
+ESLint (`npm run lint:check`):
+
+```
+./vendor/bin/sail npm run lint:check
+```
+
+**Before running tests:** the full suite (including Browser tests per `phpunit.xml`) needs a Vite production build:
+
+```
+./vendor/bin/sail npm run build
+```
+
+Browser tests ignore `public/hot` and always load assets from `public/build`, so `npm run dev` alone is not enough for the suite (you may keep `npm run dev` for local browsing).
+
+### Testing policy (mandatory)
+- Use **Pest Browser** for browser / E2E tests. **Do not** add or use Laravel Dusk.
+- Prefer stable selectors for interactive elements in E2E tests: **`data-test="..."`** (Pest Browser maps `@name` to `[data-test="name"]`) and/or explicit form `name` attributes.
+- Keep smoke coverage in `tests/Browser/WebRoutesTest.php` for public and authenticated routes.
+- Add dedicated browser tests for each new screen.
+- If using translation, create tests for each language, preferably in Feature tests asserting translations.
+- Ensure at least one complete E2E or Feature flow for critical journeys (e.g. submit the project request form).
+
+
+### Stopping Containers
+```
+./vendor/bin/sail down
+```

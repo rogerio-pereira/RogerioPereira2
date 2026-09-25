@@ -1,0 +1,15 @@
+---
+description: Admin resource CRUD without a Show page — index/create/store/edit/update/destroy; show returns 404. Use when scaffolding admin controllers or Inertia admin resources.
+---
+
+# Admin resource without Show
+
+Default admin surface for CMS-style entities:
+
+- Actions: `index`, `create`, `store`, `edit`, `update`, `destroy`
+- May use a resource controller / resource routes
+- **`show`:** leave empty or return **404** — no dedicated Show UI (Edit is enough)
+- Prefer UUID (or project route key) in admin URLs
+- SoftDeletes on content models when “remove from public” should be reversible; skip SoftDeletes when the user wants hard delete (e.g. users)
+
+Do not generate Show views/pages unless the user asks for them.

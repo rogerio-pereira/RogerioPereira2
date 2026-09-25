@@ -1,0 +1,40 @@
+---
+description: Eloquent model usage — prefer direct static/instance methods over unnecessary ::query().
+globs: app/**/*.php,database/**/*.php,tests/**/*.php
+alwaysApply: false
+---
+
+# Eloquent models — direct methods
+
+Do **not** wrap simple Eloquent operations in `Model::query()` when the static or instance API is enough.
+
+## Prefer
+
+```php
+User::create($attributes);
+User::firstOrCreate($match, $values);
+User::updateOrCreate($match, $values);
+
+$model->update($attributes);
+$model->delete();
+```
+
+## Avoid (unnecessary)
+
+```php
+User::query()->create($attributes);
+User::query()->firstOrCreate($match, $values);
+User::query()->updateOrCreate($match, $values);
+User::query()->where('active', true)->orderBy('name')->get();
+```
+
+## Prefer
+
+```php
+User::create($attributes);
+User::firstOrCreate($match, $values);
+User::updateOrCreate($match, $values);
+User::where('active', true)->orderBy('name')->get();
+```
+
+For these cases, `Model::query()->...` are not required.

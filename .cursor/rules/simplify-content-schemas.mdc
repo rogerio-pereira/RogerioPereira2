@@ -1,0 +1,21 @@
+---
+description: Prefer simple CMS/content schemas — presence visibility, SoftDeletes, derived slugs via Observer, no unused publish flags. Use when designing migrations, models, or admin CRUD plans.
+---
+
+# Simplify content schemas
+
+Default toward less machinery unless the user explicitly needs more:
+
+| Prefer | Avoid (unless required) |
+|--------|-------------------------|
+| Row in DB (+ SoftDeletes) = visible | `is_published` + draft workflows |
+| Free-text label column | Extra taxonomy table + CRUD |
+| One content format | Dual Markdown+HTML with `format` column |
+| `slug` from title via **Observer** (see `Observer Pattern` below) | Manual slug fields without generation |
+| Uploads on parent form submit | Dedicated media endpoint without a clear need |
+
+**Observer pattern:** **ALWAYS** When an Observer sets derived fields (`slug`, author name, etc.), put a short **comment on the controller `store`/`update`** stating that the Observer runs.
+
+**Empty UI:** If a section has no records, hide the whole section (not an empty shell).
+
+**Hard delete for cases and blog articles:** `CaseStudy` and `BlogArticle` have **no SoftDeletes**. Deleting one is a real delete, and its images (cover and Markdown images) are deleted from storage first (`MediaUploader::delete()` / `deleteRemovedImages()`). FAQs keep SoftDeletes (FrontPorch). Users are hard-deleted.
