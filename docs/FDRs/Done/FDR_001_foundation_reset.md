@@ -24,6 +24,7 @@
 
 **Deviations found while executing:**
 - The scaffolding used the `laravelsail/php84-composer:latest` image, because a `php85-composer` image does not exist.
+- The starter kit installed by task 2 was the old Laravel 12 kit (Laravel 12, Tailwind 3, Vite 6, Inertia v2 beta, hand-rolled auth), not the Laravel 13 kit. The fix branch `fix/f01b-foundation-stack` brought the base to the Laravel 13 kit (Laravel 13, Fortify with 2FA, Wayfinder, Tailwind 4, Vite 8, Inertia v3, reka-ui). Also, `tests.yml` triggers on PRs to `main` only, not `new-website`.
 - Postgres uses a named volume `sail-pgsql` for its data directory.
 - CI runs on PHP 8.5.
 - The `Browser` testsuite was removed from `phpunit.xml` until `tests/Browser` exists (F03 or later re-adds it).
