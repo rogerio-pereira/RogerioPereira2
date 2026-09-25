@@ -20,11 +20,11 @@
 - FrontPorch's Sail setup is ported without Redis: default bucket `rogeriopereira`, Octane `--port=80`.
 - Octane (Swoole) and S3 storage packages are added, as in FrontPorch.
 - `.env.example` follows the plan's environment variables, without the project settings block (F10 and F11 add those keys).
-- FrontPorch's Pest browser, type coverage, Pint and ESLint setup and CI workflows are ported (without the Flux credential steps; PR triggers on `main` and `new-website`).
+- FrontPorch's Pest browser, type coverage, Pint and ESLint setup and CI workflows are ported (without the Flux credential steps; PR trigger on `main` only (`new-website` is temporary; CI is run manually there)).
 
 **Deviations found while executing:**
 - The scaffolding used the `laravelsail/php84-composer:latest` image, because a `php85-composer` image does not exist.
-- The starter kit installed by task 2 was the old Laravel 12 kit (Laravel 12, Tailwind 3, Vite 6, Inertia v2 beta, hand-rolled auth), not the Laravel 13 kit. The fix branch `fix/f01b-foundation-stack` brought the base to the Laravel 13 kit (Laravel 13, Fortify with 2FA, Wayfinder, Tailwind 4, Vite 8, Inertia v3, reka-ui). Also, `tests.yml` triggers on PRs to `main` only, not `new-website`.
+- The starter kit installed by task 2 was the old Laravel 12 kit (Laravel 12, Tailwind 3, Vite 6, Inertia v2 beta, hand-rolled auth), not the Laravel 13 kit. The fix branch `fix/f01b-foundation-stack` brought the base to the Laravel 13 kit (Laravel 13, Fortify with 2FA, Wayfinder, Tailwind 4, Vite 8, Inertia v3, reka-ui).
 - Postgres uses a named volume `sail-pgsql` for its data directory.
 - CI runs on PHP 8.5.
 - The `Browser` testsuite was removed from `phpunit.xml` until `tests/Browser` exists (F03 or later re-adds it).
@@ -60,7 +60,7 @@
 | 4 | `composer require laravel/octane league/flysystem-aws-s3-v3` and Octane install with Swoole, as in FrontPorch. | `build: add Octane and S3 storage packages` |
 | 5 | `.env.example` as in the plan's environment variables, without the "PROJECT SETTINGS" block. | `chore(config): set up the environment example` |
 | 6 | Test and lint tools from FrontPorch: `pestphp/pest-plugin-browser`, `pestphp/pest-plugin-type-coverage`, `playwright` (npm); FrontPorch `phpunit.xml` env block, `pint.json`, `eslint.config.js` and `lint`/`lint:check` scripts. Nothing else. | `test: configure Pest browser tests, type coverage, Pint and ESLint` |
-| 7 | Port FrontPorch CI without the Flux credential steps; PR triggers on `main` and `new-website`. | `ci: add lint and test workflows` |
+| 7 | Port FrontPorch CI without the Flux credential steps; PR trigger on `main` only (`new-website` is temporary; CI is run manually there). | `ci: add lint and test workflows` |
 | 8 | Start and verify, fix starter kit tests broken by tasks 1–7, open the PR. | `test: keep the starter kit suite green` |
 
 Additional commits made during execution: `fix(sail): use a named volume for the pgsql data directory`, `style(api/ui): Fix code style (pint and lint)`, `ci: run workflows on PHP 8.5`.
