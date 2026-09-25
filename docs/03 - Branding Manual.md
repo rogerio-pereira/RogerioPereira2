@@ -12,7 +12,7 @@
 | Role line | Senior full-stack engineer |
 | Handle (site chrome) | `@rogeriopereira.dev` |
 | Domain | `https://rogeriopereira.dev` |
-| Location line | Florida, USA |
+| Location line | Central Florida, USA |
 | Languages | English and Portuguese (site is English only) |
 | Proof | "15+ years" is the only number used |
 | Social links (footer) | LinkedIn `https://www.linkedin.com/in/rogerio-e-pereira/` · GitHub `https://github.com/rogerio-pereira` · Instagram `https://www.instagram.com/rogeriopereira.dev/` · X `https://x.com/rpereira_dev` (`twitter:site` = `@rpereira_dev`). No email in the footer. |

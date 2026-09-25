@@ -41,7 +41,7 @@ You only need to set the env var. No package install is required.
 
 1. Open **Admin** (gear icon)
 2. Under **Property**, create a new GA4 property (for example, `Rogerio Pereira`)
-3. Set the time zone and currency appropriate for the business (Florida, USA)
+3. Set the time zone and currency appropriate for the business (Central Florida, USA)
 
 ### 3. Create a Web data stream
 
