@@ -38,7 +38,7 @@ Also set `APP_URL=http://localhost:{APP_PORT}` and `AWS_URL=http://localhost:{FO
 3. While agents work: answer their questions only from the plan and the repo docs. Anything not covered goes to Rogerio.
 4. When an agent reports its PR: check the gates passed, nothing beyond FrontPorch was added (except the plan's list of new pieces), the PR lists any new text needing approval, and the FDR was moved to `Done/`. Tell Rogerio the PR is ready.
 5. After Rogerio merges a PR: rebase every other open PR of the wave on `origin/new-website`, resolve conflicts in shared files, run the full gates again, push (`--force-with-lease`), and report.
-6. After the wave: update `docs/05 - Feature List.md` (wave status "Done") in a separate `docs` PR or as part of the last PR of the wave, and remove the worktrees.
+6. After the wave: remove the worktrees. The wave and its docs are already marked Done by the last PR of the wave (see Definition of done).
 
 ### Shared files (touched by more than one feature)
 
@@ -65,6 +65,7 @@ Agents change shared files **only with small, additive edits** (add a route, a s
 - Gates green: `sail npm run build`, the full Pest suite once (`--parallel --coverage --min=90`), Pest type coverage (`--min=90`), Pint, `sail npm run lint:check`.
 - Nothing added beyond FrontPorch except the plan's list of new pieces.
 - Commits are small and follow Conventional Commits; the FDR is moved to `Done/` in a separate docs commit.
+- The same PR marks the feature as Done in `docs/05 - Feature List.md` (feature status). If it is the last feature of its wave, the PR also marks the wave as Done there (wave table row, status of every feature) and updates any other doc that tracks the wave or feature status.
 - PR open against `new-website` (GitHub MCP), not merged.
 
 ## Consequences
