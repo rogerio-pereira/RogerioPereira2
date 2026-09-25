@@ -14,7 +14,6 @@ return [
     */
 
     'seo' => [
-        'site_name' => 'Rogerio Pereira',
         'title' => 'Rogerio Pereira · Web systems that hold up in production',
         'description' => 'Senior full-stack engineer with 15+ years in production. Websites, systems, AI integration, automation and consulting, delivered as projects with a clear scope, start and finish.',
         'image' => '/og-image.jpg',
