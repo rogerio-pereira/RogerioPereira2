@@ -36,7 +36,7 @@ services:
             POSTGRES_USER: '${DB_USERNAME}'
             POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
         volumes:
-            - './.docker/pgsql:/var/lib/postgresql'
+            - 'sail-pgsql:/var/lib/postgresql'
             - './docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
         networks:
             - sail
@@ -112,6 +112,8 @@ volumes:
     pgadmin_data:
         driver: local
     sail-minio:
+        driver: local
+    sail-pgsql:
         driver: local
 networks:
     sail:
