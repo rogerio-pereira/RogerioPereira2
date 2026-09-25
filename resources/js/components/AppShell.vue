@@ -1,30 +1,24 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import type { AppVariant } from '@/types';
 
-interface Props {
-    variant?: 'header' | 'sidebar';
-}
+type Props = {
+    variant?: AppVariant;
+};
 
-defineProps<Props>();
-
-const isOpen = ref(true);
-
-onMounted(() => {
-    isOpen.value = localStorage.getItem('sidebar') !== 'false';
+withDefaults(defineProps<Props>(), {
+    variant: 'sidebar',
 });
 
-const handleSidebarChange = (open: boolean) => {
-    isOpen.value = open;
-    localStorage.setItem('sidebar', String(open));
-};
+const isOpen = usePage().props.sidebarOpen;
 </script>
 
 <template>
     <div v-if="variant === 'header'" class="flex min-h-screen w-full flex-col">
         <slot />
     </div>
-    <SidebarProvider v-else :default-open="isOpen" :open="isOpen" @update:open="handleSidebarChange">
+    <SidebarProvider v-else :default-open="isOpen">
         <slot />
     </SidebarProvider>
 </template>
