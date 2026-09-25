@@ -2,7 +2,9 @@
 
 Read `.cursor/AGENTS.md` first.
 
-**Main rule: Clean Code + KISS + YAGNI. FrontPorch is the base model.** Docs are in `docs/`.
+**NEVER EVER BREAK:** For the entire project, make it a primary rule to follow Clean Code, KISS, and YAGNI principles—meaning every implementation should take the simplest and fastest path to achieve the goal; abstractions, layers, etc, that add complexity without real benefit should be replaced by the simplest (yet safe) way to achieve the result.
+
+FrontPorch is the base model. Docs are in `docs/`.
 
 Original plan: `/home/rogerio/Desktop/RogerioPereira_Social Media/site/planning-new-website.md`
 
