@@ -70,4 +70,18 @@ class PasswordResetTest extends TestCase
             return true;
         });
     }
+
+    public function test_password_is_not_reset_with_invalid_token()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->post('/reset-password', [
+            'token' => 'invalid-token',
+            'email' => $user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+    }
 }

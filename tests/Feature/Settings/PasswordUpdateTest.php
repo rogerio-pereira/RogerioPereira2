@@ -11,6 +11,15 @@ class PasswordUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_password_settings_page_can_be_rendered()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/settings/password');
+
+        $response->assertStatus(200);
+    }
+
     public function test_password_can_be_updated()
     {
         $user = User::factory()->create();

@@ -55,4 +55,47 @@ class EmailVerificationTest extends TestCase
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
     }
+
+    public function test_already_verified_users_are_redirected_from_the_verification_prompt()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/verify-email');
+
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_already_verified_users_are_redirected_when_visiting_the_verification_link()
+    {
+        $user = User::factory()->create();
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        $response = $this->actingAs($user)->get($verificationUrl);
+
+        $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+    }
+
+    public function test_email_verification_notification_can_be_sent()
+    {
+        $user = User::factory()->unverified()->create();
+
+        $response = $this->actingAs($user)->post('/email/verification-notification');
+
+        $response->assertRedirect();
+        $response->assertSessionHas('status', 'verification-link-sent');
+    }
+
+    public function test_email_verification_notification_is_not_sent_if_already_verified()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/email/verification-notification');
+
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
 }
