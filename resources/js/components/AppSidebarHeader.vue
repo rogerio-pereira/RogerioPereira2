@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem } from '@/types';
 
@@ -19,7 +20,8 @@ withDefaults(
     >
         <div class="flex items-center gap-2">
             <SidebarTrigger class="-ml-1" />
-            <template v-if="breadcrumbs && breadcrumbs.length > 0">
+            <template v-if="breadcrumbs.length > 0">
+                <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </template>
         </div>
