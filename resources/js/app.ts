@@ -3,12 +3,11 @@ import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
+import SiteLayout from '@/layouts/SiteLayout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => title,
     layout: (name) => {
         switch (true) {
             case name === 'Welcome':
@@ -17,12 +16,14 @@ createInertiaApp({
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
-            default:
+            case name === 'Dashboard':
                 return AppLayout;
+            default:
+                return SiteLayout;
         }
     },
     progress: {
-        color: '#4B5563',
+        color: '#00BEBE',
     },
 });
 
